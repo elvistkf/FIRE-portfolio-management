@@ -1,0 +1,34 @@
+version: "3.8"
+services:
+    backend:
+        container_name: fire_backend
+        image: "python:3.10"
+        volumes: 
+            - ./server:/app
+        ports: 
+            - "49255:8000"
+        command: >
+            sh -c "apt-get install -y libmariadb-dev && 
+                    cd app &&
+                    pip install -r requirements.txt &&
+                    cd src &&
+                    uvicorn main:app --host 0.0.0.0 --port 8000 --reload"
+        restart: unless-stopped
+    db:
+        container_name: fire_db
+        image: lscr.io/linuxserver/mariadb:latest
+        environment:
+            - PUID=1000
+            - PGID=1000
+            - MYSQL_ROOT_PASSWORD=root
+            - TZ=America/Toronto
+            - MYSQL_DATABASE=portfolio      # optional
+            - MYSQL_USER=admin              # optional
+            - MYSQL_PASSWORD=password       # optional
+        ports:
+            - "43306:3306"
+        restart: unless-stopped
+
+networks:
+    default:
+        driver: bridge
