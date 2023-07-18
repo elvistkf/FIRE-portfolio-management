@@ -36,3 +36,10 @@ def test_expected_return_with_different_index_order(weights, er):
     weights = weights.sort_index()
     assert models.expected_return(weights, er) == 0.125
 
+def test_expected_return_with_invalid_weights_type(er):
+    with pytest.raises(TypeError): 
+        er = models.expected_return([0.2, 0.3, 0.5], er)
+
+def test_expected_return_with_invalid_returns_type(weights):
+    with pytest.raises(TypeError):
+        er = models.expected_return(weights, [0.5, 0.2, -0.3])

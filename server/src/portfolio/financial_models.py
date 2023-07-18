@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 from scipy.stats import norm
+from common import *
 
 def expected_return(w: pd.Series, er: pd.Series) -> float:
     """Calculate the overall expected return of a combination of assets.
@@ -12,7 +13,11 @@ def expected_return(w: pd.Series, er: pd.Series) -> float:
     Returns:
         float: Expected return of the combined assets.
     """
-    if not all(w.index.sort_values() == er.index.sort_values()):
+    if not isinstance(w, pd.Series):
+        raise TypeError(f"Expected weights w to be a Series, instead found {type(w)}.")
+    if not isinstance(er, pd.Series):
+        raise TypeError(f"Expected expected return er to be a Series, instead found {type(er)}.")
+    if not np.all(w.index.sort_values() == er.index.sort_values()):
         raise ValueError("Expected matching index from weights w and expected return er.")
     
     return w.T @ er
@@ -27,14 +32,16 @@ def volatility(w: pd.Series, cov: pd.DataFrame) -> float:
     Returns:
         float: Volatility of the combined assets
     """
-    if not all(w.index.sort_values() == cov.index.sort_values()):
+    if not np.all(w.index.sort_values() == cov.index.sort_values()):
         raise ValueError("Expected matching index from weights w and covariance matrix cov.")
-    if not all(cov.index == cov.columns):
+    if not np.all(cov.index == cov.columns):
         raise ValueError("Expected matching index and columns for the covariance matrix.")
+    if not is_psd(cov):
+        raise ValueError("Expected covariance matrix cov to be positive semi-definiteness.")
     
     return np.sqrt(w.T @ cov @ w)
 
-def sharpe_ratio(w: pd.Series, er: pd.Series, cov: pd.DataFrame, rf: float) -> float:
+def sharpe_ratio(w: pd.Series, er: pd.Series, cov: pd.DataFrame, rf: int | float) -> float:
     """Calculate the Sharpe ratio of a combination of assets.
 
     Args:
@@ -46,6 +53,9 @@ def sharpe_ratio(w: pd.Series, er: pd.Series, cov: pd.DataFrame, rf: float) -> f
     Returns:
         float: Sharpe ratio of the combined assets.
     """
+    if not isinstance(rf, float) or not isinstance(rf, int):
+        raise TypeError(f"Expected risk-free rate rf to be int or float, instead found {type(rf)}.")
+    
     adjusted_return = expected_return(w, er) - rf
     return adjusted_return / volatility(w, cov)
 
@@ -72,11 +82,16 @@ def value_at_risk(w: pd.Series, er: pd.Series, cov: pd.DataFrame, alpha: float =
         w (pd.Series): Weight distribution of the assets.
         er (pd.Series): Expected return of each asset.
         cov (pd.DataFrame): Covariance matrix of the assets.
-        alpha (float): Confidence level in range [0, 1]. For example, a confidence level of 95% is represented by 0.95. Defaults to 0.95.
+        alpha (float): Confidence level in range (0, 1). For example, a confidence level of 95% is represented by 0.95. Defaults to 0.95.
 
     Returns:
         float: Value-at-Risk (VaR) of the combined assets
     """
+    if not isinstance(alpha, float):
+        raise TypeError(f"Expected confidence level alpha to be a float, instead found {type(alpha)}.")
+    if alpha <= 0 or alpha >= 1:
+        raise ValueError(f"Expected confidence level alpha to be in (0, 1), instead found {alpha}.")
+
     mean = expected_return(w, er)
     vol = volatility(w, cov)
     return -norm.ppf(1-alpha, mean, vol)
@@ -100,8 +115,10 @@ def historic_value_at_risk(r: pd.Series | pd.DataFrame, alpha: float = 0.95, w: 
         var = r.aggregate(historic_value_at_risk, alpha = alpha)
         if w is None:
             return var
-        else:
+        elif isinstance(w, pd.Series):
             return w.T @ var
+        else:
+            raise TypeError(f"Expected weights w to be a Series, instead of {type(w)}.")
     else:
-        raise TypeError("Expected r to be a Series or DataFrame.")
+        raise TypeError(f"Expected r to be a Series or DataFrame, instead found {type(r)}.")
         
