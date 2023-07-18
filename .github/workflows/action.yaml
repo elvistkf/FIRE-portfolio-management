@@ -18,6 +18,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies
         run: |
+          apt-get install -y libmariadb-dev && 
           python -m pip install --upgrade pip
           pip install ruff pytest
           if [ -f server/requirements.txt ]; then pip install -r server/requirements.txt; fi
