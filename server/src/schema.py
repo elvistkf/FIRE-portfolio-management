@@ -9,7 +9,7 @@ class Transaction(SQLModel, table=True):
     account: int = Field(default=None, nullable=False)
     ticker: str = Field(max_length=10, nullable=False)
     price: condecimal(max_digits=10, decimal_places=3) = Field(nullable=False)
-    quantity: condecimal(max_digits=10, decimal_places=3) = Field(nullable=False)
+    shares: condecimal(max_digits=10, decimal_places=3) = Field(nullable=False)
 
 class Account(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)

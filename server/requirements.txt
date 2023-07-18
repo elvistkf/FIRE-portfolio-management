@@ -3,3 +3,7 @@ uvicorn==0.20.0
 sqlalchemy==1.4.41
 sqlmodel
 mariadb
+pandas
+numpy
+scipy
+yfinance
