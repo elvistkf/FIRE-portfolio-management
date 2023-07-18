@@ -1,6 +1,24 @@
 import numpy as np
 import pandas as pd
 
+def is_matching_index(idx1: pd.Index, idx2: pd.Index, strict: bool = False) -> bool:
+    """Check if the provided indices match each other.
+
+    Args:
+        idx1 (pd.Index): Index 1
+        idx2 (pd.Index): Index 2
+        strict (bool, optional): Whether or not the indices must be in the same order. Defaults to False.
+
+    Returns:
+        bool: Whether or not the provided indices match each other.
+    """
+    if idx1.shape[0] != idx2.shape[0]:
+        return False
+    if strict:
+        return np.all(idx1 == idx2)
+    else:
+        return np.all(idx1.sort_values() == idx2.sort_values())
+
 def is_psd(X: pd.DataFrame | np.ndarray) -> bool:
     """Check if the provided matrix is positive semi-definite (PSD).
 
@@ -28,4 +46,3 @@ def is_psd(X: pd.DataFrame | np.ndarray) -> bool:
         return False
 
     return True
-    

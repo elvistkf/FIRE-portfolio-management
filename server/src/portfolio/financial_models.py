@@ -1,23 +1,20 @@
 import pandas as pd
 import numpy as np
 from scipy.stats import norm
-from common import *
+from .common import *
 
-def is_valid_weights(w: pd.Series) -> bool:
-    """Check if the provided weights w is valid subject to practical constraints.
+def validate_weights(w: pd.Series) -> None:
+    """Validate if the provided weights w is valid subject to practical constraints. If any of the constraints are violated, an exception is raised.
 
     Args:
         w (pd.Series): Weights w to be checked for validity.
-
-    Returns:
-        bool: Whether the weights w is valid or not.
     """
+    if not isinstance(w, pd.Series):
+        raise TypeError(f"Expected weights w to be a Series, instead found {type(w)}.")
     if w.sum() != 1:        # the sum of the weights must equal to 1
-        return False
+        raise ValueError(f"Expected the sum of weights w to be 1, instead found {w.sum()}.")
     if np.any(w < 0):       # all elements in weights must be non-negative
-        return False
-    
-    return True
+        raise ValueError(f"Expected all elements in weights w to be non-negative.")
 
 def expected_return(w: pd.Series, er: pd.Series) -> float:
     """Calculate the overall expected return of a combination of assets.
@@ -29,12 +26,11 @@ def expected_return(w: pd.Series, er: pd.Series) -> float:
     Returns:
         float: Expected return of the combined assets.
     """
-    if not isinstance(w, pd.Series):
-        raise TypeError(f"Expected weights w to be a Series, instead found {type(w)}.")
+    validate_weights(w)
     if not isinstance(er, pd.Series):
         raise TypeError(f"Expected expected return er to be a Series, instead found {type(er)}.")
-    if not np.all(w.index.sort_values() == er.index.sort_values()):
-        raise ValueError("Expected matching index from weights w and expected return er.")
+    if not is_matching_index(w.index, er.index):
+        raise AttributeError("Expected matching index from weights w and expected return er.")
     
     return w.T @ er
 
@@ -48,12 +44,15 @@ def volatility(w: pd.Series, cov: pd.DataFrame) -> float:
     Returns:
         float: Volatility of the combined assets
     """
-    if not np.all(w.index.sort_values() == cov.index.sort_values()):
-        raise ValueError("Expected matching index from weights w and covariance matrix cov.")
-    if not np.all(cov.index == cov.columns):
-        raise ValueError("Expected matching index and columns for the covariance matrix.")
+    validate_weights(w)
+    if not isinstance(cov, pd.DataFrame):
+        raise TypeError(f"Expected covariance matrix cov to be a DataFrame, instead found {type(cov)}.")
     if not is_psd(cov):
         raise ValueError("Expected covariance matrix cov to be positive semi-definiteness.")
+    if not is_matching_index(w.index, cov.index):
+        raise AttributeError("Expected matching index from weights w and covariance matrix cov.")
+    if not is_matching_index(cov.index, cov.columns, strict=True):
+        raise AttributeError("Expected matching index and columns for the covariance matrix.")
     
     return np.sqrt(w.T @ cov @ w)
 
@@ -73,6 +72,7 @@ def sharpe_ratio(w: pd.Series, er: pd.Series, cov: pd.DataFrame, rf: int | float
         raise TypeError(f"Expected risk-free rate rf to be int or float, instead found {type(rf)}.")
     
     adjusted_return = expected_return(w, er) - rf
+
     return adjusted_return / volatility(w, cov)
 
 def information_ratio(w: pd.Series, er: pd.Series, cov: pd.DataFrame) -> float:
@@ -88,7 +88,7 @@ def information_ratio(w: pd.Series, er: pd.Series, cov: pd.DataFrame) -> float:
     """
     return sharpe_ratio(w, er, cov, 0)
 
-def value_at_risk(w: pd.Series, er: pd.Series, cov: pd.DataFrame, alpha: float = 0.95) -> float:
+def var_gaussian(w: pd.Series, er: pd.Series, cov: pd.DataFrame, alpha: float = 0.95) -> float:
     """Calculate the Value-at-Risk (VaR) of a combination of assets by Variance-Covariance method.
 
     The VaR is defined as the maximum potential loss expected, under normal market condition, with a certain confidence level.
@@ -112,13 +112,13 @@ def value_at_risk(w: pd.Series, er: pd.Series, cov: pd.DataFrame, alpha: float =
     vol = volatility(w, cov)
     return -norm.ppf(1-alpha, mean, vol)
 
-def historic_value_at_risk(r: pd.Series | pd.DataFrame, alpha: float = 0.95, w: pd.Series = None) -> float | pd.Series:
+def var_historic(r: pd.Series | pd.DataFrame, alpha: float = 0.95, w: pd.Series | None = None) -> float | pd.Series:
     """Calculate the Value-at-Risk (VaR) of a single asset of a combination of assets by historical method.
 
     Args:
         r (pd.DataFrame | pd.Series): Historical return of the asset(s).
         alpha (float, optional): Confidence level in range [0, 1]. Defaults to 0.95.
-        w (pd.Series, optional): Weight distribution of the assets. Defaults to None.
+        w (pd.Series | None, optional): Weight distribution of the assets. Defaults to None.
 
     Returns:
         float | pd.Series: The historical VaR for the asset(s). 
@@ -130,13 +130,37 @@ def historic_value_at_risk(r: pd.Series | pd.DataFrame, alpha: float = 0.95, w: 
     if isinstance(r, pd.Series):
         return -np.percentile(r.dropna(), q=int((1-alpha) * 100), axis=0)
     elif isinstance(r, pd.DataFrame):
-        var = r.aggregate(historic_value_at_risk, alpha = alpha)
+        var = r.aggregate(var_historic, alpha=alpha)
         if w is None:
             return var
-        elif isinstance(w, pd.Series):
-            return w.T @ var
         else:
-            raise TypeError(f"Expected weights w to be a Series, instead found {type(w)}.")
+            validate_weights(w)
+            return w.T @ var
     else:
         raise TypeError(f"Expected r to be a Series or DataFrame, instead found {type(r)}.")
         
+def cvar_historic(r: pd.DataFrame | pd.Series, alpha: float = 0.95, w: pd.Series | None = None) -> float | pd.Series:
+    """Calculate the Conditional Value-at-Risk (CVaR), also known as Expected Shortfall (ES), of a single asset of a combination of assets by historical method.
+
+    Args:
+        r (pd.DataFrame | pd.Series): Historical return of the asset(s).
+        alpha (float, optional): Confidence level in range [0, 1]. Defaults to 0.95.
+        w (pd.Series | None, optional): Weight distribution of the assets. Defaults to None.
+
+    Returns:
+        float | pd.Series: The historical CVaR for the asset(s). 
+        If only one asset's data is provided, or if weights are provided, the returned value is a float representing the overall historical CVaR.
+        If multiple assets are provided but not weights, a Series is provided with the CVaR for each asset.
+    """
+    if isinstance(r, pd.Series):
+        return -r[r <= -var_historic(r, alpha=alpha)].mean()
+    elif isinstance(r, pd.DataFrame):
+        cvar = r.aggregate(cvar_historic, alpha=alpha)
+        if w is None:
+            return cvar
+        else:
+            validate_weights(w)
+            return w.T @ cvar
+    else:
+        raise TypeError(f"Expected r to be a Series or DataFrame, instead found {type(r)}.")
+    
