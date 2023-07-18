@@ -3,6 +3,22 @@ import numpy as np
 from scipy.stats import norm
 from common import *
 
+def is_valid_weights(w: pd.Series) -> bool:
+    """Check if the provided weights w is valid subject to practical constraints.
+
+    Args:
+        w (pd.Series): Weights w to be checked for validity.
+
+    Returns:
+        bool: Whether the weights w is valid or not.
+    """
+    if w.sum() != 1:        # the sum of the weights must equal to 1
+        return False
+    if np.any(w < 0):       # all elements in weights must be non-negative
+        return False
+    
+    return True
+
 def expected_return(w: pd.Series, er: pd.Series) -> float:
     """Calculate the overall expected return of a combination of assets.
 
@@ -53,7 +69,7 @@ def sharpe_ratio(w: pd.Series, er: pd.Series, cov: pd.DataFrame, rf: int | float
     Returns:
         float: Sharpe ratio of the combined assets.
     """
-    if not isinstance(rf, float) or not isinstance(rf, int):
+    if not isinstance(rf, float) and not isinstance(rf, int):
         raise TypeError(f"Expected risk-free rate rf to be int or float, instead found {type(rf)}.")
     
     adjusted_return = expected_return(w, er) - rf
@@ -109,6 +125,8 @@ def historic_value_at_risk(r: pd.Series | pd.DataFrame, alpha: float = 0.95, w: 
         If only one asset's data is provided, or if weights are provided, the returned value is a float representing the overall historical VaR.
         If multiple assets are provided but not weights, then a Series is provided with the VaR for each asset.
     """
+    if not isinstance(alpha, float):
+        TypeError(f"Expected confidence level alpha to be a float, instead found {type(alpha)}.")
     if isinstance(r, pd.Series):
         return -np.percentile(r.dropna(), q=int((1-alpha) * 100), axis=0)
     elif isinstance(r, pd.DataFrame):
@@ -118,7 +136,7 @@ def historic_value_at_risk(r: pd.Series | pd.DataFrame, alpha: float = 0.95, w: 
         elif isinstance(w, pd.Series):
             return w.T @ var
         else:
-            raise TypeError(f"Expected weights w to be a Series, instead of {type(w)}.")
+            raise TypeError(f"Expected weights w to be a Series, instead found {type(w)}.")
     else:
         raise TypeError(f"Expected r to be a Series or DataFrame, instead found {type(r)}.")
         

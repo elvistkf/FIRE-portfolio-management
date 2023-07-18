@@ -27,5 +27,3 @@ class Portfolio:
             statement = select(Transaction)
             results = session.exec(statement).all()
         return pd.DataFrame(results)
-
-df = pd.DataFrame()
