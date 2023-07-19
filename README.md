@@ -1,5 +1,5 @@
 # FIRE - Portfolio Management Tool
-[![Portfolio Management Backend Application](https://github.com/elvistkf/FIRE-portfolio-management/actions/workflows/action.yaml/badge.svg)](https://github.com/elvistkf/FIRE-portfolio-management/actions/workflows/action.yaml)
+[![Python Backend Application](https://github.com/elvistkf/FIRE-portfolio-management/actions/workflows/python.yaml/badge.svg)](https://github.com/elvistkf/FIRE-portfolio-management/actions/workflows/python.yaml)
 
 FIRE is a self-hosting web-based portfolio management tool designed to help you make the most optimal investment decisions.
 
