@@ -19,7 +19,7 @@ jobs:
               run: |
                 sudo apt-get install -y libmariadb-dev
                 python -m pip install --upgrade pip
-                pip install ruff pytest
+                pip install ruff pytest flake8
                 if [ -f server/requirements.txt ]; then pip install -r server/requirements.txt; fi
             - name: Lint with flake8
               run: |
