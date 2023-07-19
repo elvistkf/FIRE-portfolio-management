@@ -59,8 +59,8 @@ def normalize(s: pd.Series | np.ndarray) -> pd.Series:
         s (pd.Series | np.ndarray): Input array/Series
 
     Returns:
-        pd.Series: Normalized Series
+        pd.Series: Normalized array/Series
     """
-    if not (isinstance(s, pd.Seires) or isinstance(s, np.ndarray)):
+    if not (isinstance(s, pd.Series) or isinstance(s, np.ndarray)):
         raise TypeError(f"Expected s to be a Series or ndarray, instead found {type(s)}")
     return s / s.sum()

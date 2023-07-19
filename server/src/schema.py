@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Type
 from datetime import datetime
 from pydantic import condecimal
 from sqlmodel import Field, SQLModel
