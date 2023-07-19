@@ -13,7 +13,7 @@ class Portfolio:
         """Initialize the Portfolio object with either transaction history or shares/weights distribution.
 
         Args:
-            details (pd.DataFrame | pd.Series | None, optional): Transaction history or shares/weights distribution for the portfolio. 
+            details (pd.DataFrame | pd.Series | None, optional): Transaction history or shares/weights distribution for the portfolio.
             If None is passed as the argument, the transaction history from the database will be automatically retrieved. Defaults to None.
         """
 
@@ -22,11 +22,15 @@ class Portfolio:
                 raise AttributeError(
                     "Expected matching columns from transaction details with table schema."
                 )
+            self.transactions = details
         elif isinstance(details, pd.Series):
-            pass
+            self.distribution = details
         else:
             raise TypeError(
                 f"Expected input details to be a DataFrame or a Series, instead found {type(details)}.")
+
+    def get_weights(self) -> pd.Series:
+        return 0
 
     def get_transactions(self) -> pd.DataFrame:
         """Retrieve transaction history from the database

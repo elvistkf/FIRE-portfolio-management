@@ -1,3 +1,4 @@
+from typing import List
 import numpy as np
 import pandas as pd
 
@@ -51,3 +52,16 @@ def is_psd(X: pd.DataFrame | np.ndarray) -> bool:
         return False
 
     return True
+
+def normalize(s: pd.Series | np.ndarray) -> pd.Series:
+    """Normalize the a positive (element-wise) array/Series to sum up to 1
+
+    Args:
+        s (pd.Series | np.ndarray): Input array/Series
+
+    Returns:
+        pd.Series: Normalized Series
+    """
+    if not (isinstance(s, pd.Seires) or isinstance(s, np.ndarray)):
+        raise TypeError(f"Expected s to be a Series or ndarray, instead found {type(s)}")
+    return s / s.sum()

@@ -105,8 +105,8 @@ def var_gaussian(w: pd.Series, er: pd.Series, cov: pd.DataFrame, alpha: float = 
     The VaR is defined as the maximum potential loss expected, under normal market condition, with a certain confidence level.
     A VaR of 100 with confidence level of 99% means that the maximum loss will not exceed 100 with probability of 99%.
 
-    Note that this function assumes normality of the underlying assets. 
-    If this assumption is not satisfied, the historical method must be used. 
+    Note that this function assumes normality of the underlying assets.
+    If this assumption is not satisfied, the historical method must be used.
     See var_historic for calculating VaR with historical method.
 
     Args:
