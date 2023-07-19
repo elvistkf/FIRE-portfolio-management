@@ -13,7 +13,8 @@ class Portfolio:
         """Initialize the Portfolio object with either transaction history or shares/weights distribution.
 
         Args:
-            details (pd.DataFrame | pd.Series | None, optional): Provided details for the portfolio, could be transaction history or shares/weights distribution. If None is passed as the argument, the transaction history from the database will be automatically retrieved. Defaults to None.
+            details (pd.DataFrame | pd.Series | None, optional): Transaction history or shares/weights distribution for the portfolio. 
+            If None is passed as the argument, the transaction history from the database will be automatically retrieved. Defaults to None.
         """
 
         if isinstance(details, pd.DataFrame):

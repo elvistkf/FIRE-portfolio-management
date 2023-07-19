@@ -5,7 +5,8 @@ from .common import is_psd, is_matching_index
 
 
 def validate_weights(w: pd.Series) -> None:
-    """Validate if the provided weights w is valid subject to practical constraints. If any of the constraints are violated, an exception is raised.
+    """Validate if the provided weights w is valid subject to practical constraints.
+    If any of the constraints are violated, an exception is raised.
 
     Args:
         w (pd.Series): Weights w to be checked for validity.
@@ -102,9 +103,11 @@ def var_gaussian(w: pd.Series, er: pd.Series, cov: pd.DataFrame, alpha: float = 
     """Calculate the Value-at-Risk (VaR) of a combination of assets by Variance-Covariance method.
 
     The VaR is defined as the maximum potential loss expected, under normal market condition, with a certain confidence level.
-    A VaR of 100 with confidence level of 99% means that the maximum potential loss will not exceed 100 with probability of 99%.
+    A VaR of 100 with confidence level of 99% means that the maximum loss will not exceed 100 with probability of 99%.
 
-    Note that this function assumes normality of the underlying assets. If this assumption is not satisfied, the historical method must be used. See var_historic for calculating VaR with historical method.
+    Note that this function assumes normality of the underlying assets. 
+    If this assumption is not satisfied, the historical method must be used. 
+    See var_historic for calculating VaR with historical method.
 
     Args:
         w (pd.Series): Weight distribution of the assets.
@@ -157,7 +160,7 @@ def var_historic(r: pd.Series | pd.DataFrame, alpha: float = 0.95, w: pd.Series 
 
 
 def cvar_historic(r: pd.DataFrame | pd.Series, alpha: float = 0.95, w: pd.Series | None = None) -> float | pd.Series:
-    """Calculate the Conditional Value-at-Risk (CVaR), also known as Expected Shortfall (ES), of a single asset of a combination of assets by historical method.
+    """Calculate the Conditional Value-at-Risk (CVaR) of a single asset of a combination of assets by historical method.
 
     Args:
         r (pd.DataFrame | pd.Series): Historical return of the asset(s).
