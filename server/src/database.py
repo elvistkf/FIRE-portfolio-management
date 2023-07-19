@@ -7,5 +7,6 @@ password = "root"       # This is a placeholder for development
 db_name = "portfolio"
 engine = create_engine(f"mariadb+mariadbconnector://{username}:{password}@{hostname}:{port}/{db_name}")
 
+
 def create_tables() -> None:
     SQLModel.metadata.create_all(engine)

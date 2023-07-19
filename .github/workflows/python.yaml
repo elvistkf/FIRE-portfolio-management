@@ -1,4 +1,4 @@
-name: Portfolio Management Backend Application
+name: Python Backend Application
 
 on: [push]
 
@@ -17,10 +17,13 @@ jobs:
                   python-version: ${{ matrix.python-version }}
             - name: Install dependencies
               run: |
-                  sudo apt-get install -y libmariadb-dev
-                  python -m pip install --upgrade pip
-                  pip install ruff pytest
-                  if [ -f server/requirements.txt ]; then pip install -r server/requirements.txt; fi
+                sudo apt-get install -y libmariadb-dev
+                python -m pip install --upgrade pip
+                pip install ruff pytest
+                if [ -f server/requirements.txt ]; then pip install -r server/requirements.txt; fi
+            - name: Lint with flake8
+              run: |
+                flake8 . --count --extend-ignore=E501 --show-source --statistics
             - name: Test with pytest
               run: |
-                  PYTHONPATH=server/src pytest server/tests
+                PYTHONPATH=server/src pytest server/tests

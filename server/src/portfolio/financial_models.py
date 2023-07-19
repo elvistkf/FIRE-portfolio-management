@@ -1,7 +1,8 @@
 import pandas as pd
 import numpy as np
 from scipy.stats import norm
-from .common import *
+from .common import is_psd, is_matching_index
+
 
 def validate_weights(w: pd.Series) -> None:
     """Validate if the provided weights w is valid subject to practical constraints. If any of the constraints are violated, an exception is raised.
@@ -14,7 +15,8 @@ def validate_weights(w: pd.Series) -> None:
     if w.sum() != 1:        # the sum of the weights must equal to 1
         raise ValueError(f"Expected the sum of weights w to be 1, instead found {w.sum()}.")
     if np.any(w < 0):       # all elements in weights must be non-negative
-        raise ValueError(f"Expected all elements in weights w to be non-negative.")
+        raise ValueError("Expected all elements in weights w to be non-negative.")
+
 
 def expected_return(w: pd.Series, er: pd.Series) -> float:
     """Calculate the overall expected return of a combination of assets.
@@ -31,8 +33,9 @@ def expected_return(w: pd.Series, er: pd.Series) -> float:
         raise TypeError(f"Expected expected return er to be a Series, instead found {type(er)}.")
     if not is_matching_index(w.index, er.index):
         raise AttributeError("Expected matching index from weights w and expected return er.")
-    
+
     return w.T @ er
+
 
 def volatility(w: pd.Series, cov: pd.DataFrame) -> float:
     """Calculate the overall volatility of a combination of assets.
@@ -53,8 +56,9 @@ def volatility(w: pd.Series, cov: pd.DataFrame) -> float:
         raise AttributeError("Expected matching index from weights w and covariance matrix cov.")
     if not is_matching_index(cov.index, cov.columns, strict=True):
         raise AttributeError("Expected matching index and columns for the covariance matrix.")
-    
+
     return np.sqrt(w.T @ cov @ w)
+
 
 def sharpe_ratio(w: pd.Series, er: pd.Series, cov: pd.DataFrame, rf: int | float) -> float:
     """Calculate the Sharpe ratio of a combination of assets.
@@ -70,13 +74,15 @@ def sharpe_ratio(w: pd.Series, er: pd.Series, cov: pd.DataFrame, rf: int | float
     """
     if not isinstance(rf, float) and not isinstance(rf, int):
         raise TypeError(f"Expected risk-free rate rf to be int or float, instead found {type(rf)}.")
-    
+
     adjusted_return = expected_return(w, er) - rf
     return adjusted_return / volatility(w, cov)
+
 
 def annualized_sharpe_ratio(r: pd.Series, rf: int | float, periods_per_year: int) -> float:
     # TODO: complete the annualized Sharpe ratio calculation
     return 0
+
 
 def information_ratio(w: pd.Series, er: pd.Series, cov: pd.DataFrame) -> float:
     """Calculate the information ratio of a combination of assets.
@@ -90,6 +96,7 @@ def information_ratio(w: pd.Series, er: pd.Series, cov: pd.DataFrame) -> float:
         float: Information ratio of the combined assets
     """
     return sharpe_ratio(w, er, cov, 0)
+
 
 def var_gaussian(w: pd.Series, er: pd.Series, cov: pd.DataFrame, alpha: float = 0.95) -> float:
     """Calculate the Value-at-Risk (VaR) of a combination of assets by Variance-Covariance method.
@@ -117,6 +124,7 @@ def var_gaussian(w: pd.Series, er: pd.Series, cov: pd.DataFrame, alpha: float = 
     vol = volatility(w, cov)
     return -norm.ppf(1-alpha, mean, vol)
 
+
 def var_historic(r: pd.Series | pd.DataFrame, alpha: float = 0.95, w: pd.Series | None = None) -> float | pd.Series:
     """Calculate the Value-at-Risk (VaR) of a single asset of a combination of assets by historical method.
 
@@ -129,7 +137,7 @@ def var_historic(r: pd.Series | pd.DataFrame, alpha: float = 0.95, w: pd.Series 
         w (pd.Series | None, optional): Weight distribution of the assets. Defaults to None.
 
     Returns:
-        float | pd.Series: The historical VaR for the asset(s). 
+        float | pd.Series: The historical VaR for the asset(s).
         If only one asset's data is provided, or if weights are provided, the returned value is a float representing the overall historical VaR.
         If multiple assets are provided but not weights, then a Series is provided with the VaR for each asset.
     """
@@ -146,11 +154,10 @@ def var_historic(r: pd.Series | pd.DataFrame, alpha: float = 0.95, w: pd.Series 
             return w.T @ var
     else:
         raise TypeError(f"Expected r to be a Series or DataFrame, instead found {type(r)}.")
-        
+
+
 def cvar_historic(r: pd.DataFrame | pd.Series, alpha: float = 0.95, w: pd.Series | None = None) -> float | pd.Series:
     """Calculate the Conditional Value-at-Risk (CVaR), also known as Expected Shortfall (ES), of a single asset of a combination of assets by historical method.
-
-    The CVaR is defined as the expected loss given the condition that 
 
     Args:
         r (pd.DataFrame | pd.Series): Historical return of the asset(s).
@@ -158,7 +165,7 @@ def cvar_historic(r: pd.DataFrame | pd.Series, alpha: float = 0.95, w: pd.Series
         w (pd.Series | None, optional): Weight distribution of the assets. Defaults to None.
 
     Returns:
-        float | pd.Series: The historical CVaR for the asset(s). 
+        float | pd.Series: The historical CVaR for the asset(s).
         If only one asset's data is provided, or if weights are provided, the returned value is a float representing the overall historical CVaR.
         If multiple assets are provided but not weights, a Series is provided with the CVaR for each asset.
     """
@@ -173,4 +180,3 @@ def cvar_historic(r: pd.DataFrame | pd.Series, alpha: float = 0.95, w: pd.Series
             return w.T @ cvar
     else:
         raise TypeError(f"Expected r to be a Series or DataFrame, instead found {type(r)}.")
-    

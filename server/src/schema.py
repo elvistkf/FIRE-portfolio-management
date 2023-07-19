@@ -5,6 +5,7 @@ from sqlmodel import Field, SQLModel
 
 import pandas as pd
 
+
 class Transaction(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     date: datetime = Field(nullable=False)
@@ -16,6 +17,7 @@ class Transaction(SQLModel, table=True):
     @classmethod
     def get_fields(cls) -> pd.Index:
         return pd.Index(list(cls.__fields__.keys()))
+
 
 class Account(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)

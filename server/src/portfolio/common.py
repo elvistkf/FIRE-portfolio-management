@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 
+
 def is_matching_index(idx1: pd.Index, idx2: pd.Index, strict: bool = False) -> bool:
     """Check if the provided indices match each other.
 
@@ -19,6 +20,7 @@ def is_matching_index(idx1: pd.Index, idx2: pd.Index, strict: bool = False) -> b
     else:
         return np.all(idx1.sort_values() == idx2.sort_values())
 
+
 def is_psd(X: pd.DataFrame | np.ndarray) -> bool:
     """Check if the provided matrix is positive semi-definite (PSD).
 
@@ -29,8 +31,9 @@ def is_psd(X: pd.DataFrame | np.ndarray) -> bool:
         bool: Whether the provided matrix is PSD or not.
     """
     if not isinstance(X, pd.DataFrame) and not isinstance(X, np.ndarray):
-        raise TypeError(f"Expected input matrix X to be DataFrame or ndarray, instead found {type(X)}.")
-    
+        raise TypeError(
+            f"Expected input matrix X to be DataFrame or ndarray, instead found {type(X)}.")
+
     if isinstance(X, pd.DataFrame):
         X = X.to_numpy()
 
@@ -38,10 +41,12 @@ def is_psd(X: pd.DataFrame | np.ndarray) -> bool:
         return False
     if not np.all(X - X.T == 0):        # X must be symmetric
         return False
-    
+
     try:
-        X_reg = X + np.eye(X.shape[0]) * 1e-14  # regularize the input matrix to make it PD if it is PSD
-        _ = np.linalg.cholesky(X_reg)           # apply the Cholesky decomposition to the regularized matrix, which fails if it is not PD
+        # regularize the input matrix to make it PD if it is PSD
+        X_reg = X + np.eye(X.shape[0]) * 1e-14
+        # apply the Cholesky decomposition to the regularized matrix, which fails if it is not PD
+        _ = np.linalg.cholesky(X_reg)
     except np.linalg.LinAlgError:
         return False
 

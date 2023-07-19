@@ -1,12 +1,11 @@
-import numpy as np
+from schema import Transaction
+from database import engine
 import pandas as pd
-from sqlmodel import Session, select, func
-from .common import *
+from sqlmodel import Session, select
+from .common import is_matching_index
 
 import sys
 sys.path.insert(0, '..')
-from database import engine
-from schema import Transaction
 
 
 class Portfolio:
@@ -19,13 +18,15 @@ class Portfolio:
 
         if isinstance(details, pd.DataFrame):
             if not is_matching_index(details.columns, Transaction.get_fields()):
-                raise AttributeError("Expected matching columns from transaction details with table schema.")
+                raise AttributeError(
+                    "Expected matching columns from transaction details with table schema."
+                )
         elif isinstance(details, pd.Series):
             pass
         else:
-            raise TypeError(f"Expected input details to be a DataFrame or a Series, instead found {type(details)}.")
-        
-    
+            raise TypeError(
+                f"Expected input details to be a DataFrame or a Series, instead found {type(details)}.")
+
     def get_transactions(self) -> pd.DataFrame:
         """Retrieve transaction history from the database
 
