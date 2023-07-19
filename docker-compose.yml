@@ -20,11 +20,11 @@ services:
         environment:
             - PUID=1000
             - PGID=1000
-            - MYSQL_ROOT_PASSWORD=root
+            - MYSQL_ROOT_PASSWORD=root      # This is a placeholder for development.
             - TZ=America/Toronto
             - MYSQL_DATABASE=portfolio      # optional
-            - MYSQL_USER=admin              # optional
-            - MYSQL_PASSWORD=password       # optional
+            - MYSQL_USER=admin              # optional. This is a placeholder for development.
+            - MYSQL_PASSWORD=password       # optional. This is a placeholder for development.
         ports:
             - "43306:3306"
         restart: unless-stopped

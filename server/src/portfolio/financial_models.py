@@ -72,8 +72,11 @@ def sharpe_ratio(w: pd.Series, er: pd.Series, cov: pd.DataFrame, rf: int | float
         raise TypeError(f"Expected risk-free rate rf to be int or float, instead found {type(rf)}.")
     
     adjusted_return = expected_return(w, er) - rf
-
     return adjusted_return / volatility(w, cov)
+
+def annualized_sharpe_ratio(r: pd.Series, rf: int | float, periods_per_year: int) -> float:
+    # TODO: complete the annualized Sharpe ratio calculation
+    return 0
 
 def information_ratio(w: pd.Series, er: pd.Series, cov: pd.DataFrame) -> float:
     """Calculate the information ratio of a combination of assets.
@@ -93,6 +96,8 @@ def var_gaussian(w: pd.Series, er: pd.Series, cov: pd.DataFrame, alpha: float = 
 
     The VaR is defined as the maximum potential loss expected, under normal market condition, with a certain confidence level.
     A VaR of 100 with confidence level of 99% means that the maximum potential loss will not exceed 100 with probability of 99%.
+
+    Note that this function assumes normality of the underlying assets. If this assumption is not satisfied, the historical method must be used. See var_historic for calculating VaR with historical method.
 
     Args:
         w (pd.Series): Weight distribution of the assets.
@@ -114,6 +119,9 @@ def var_gaussian(w: pd.Series, er: pd.Series, cov: pd.DataFrame, alpha: float = 
 
 def var_historic(r: pd.Series | pd.DataFrame, alpha: float = 0.95, w: pd.Series | None = None) -> float | pd.Series:
     """Calculate the Value-at-Risk (VaR) of a single asset of a combination of assets by historical method.
+
+    The VaR is defined as the maximum potential loss expected, under normal market condition, with a certain confidence level.
+    A VaR of 100 with confidence level of 99% means that the maximum potential loss will not exceed 100 with probability of 99%.
 
     Args:
         r (pd.DataFrame | pd.Series): Historical return of the asset(s).
@@ -141,6 +149,8 @@ def var_historic(r: pd.Series | pd.DataFrame, alpha: float = 0.95, w: pd.Series 
         
 def cvar_historic(r: pd.DataFrame | pd.Series, alpha: float = 0.95, w: pd.Series | None = None) -> float | pd.Series:
     """Calculate the Conditional Value-at-Risk (CVaR), also known as Expected Shortfall (ES), of a single asset of a combination of assets by historical method.
+
+    The CVaR is defined as the expected loss given the condition that 
 
     Args:
         r (pd.DataFrame | pd.Series): Historical return of the asset(s).

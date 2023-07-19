@@ -40,8 +40,8 @@ def is_psd(X: pd.DataFrame | np.ndarray) -> bool:
         return False
     
     try:
-        X_reg = X + np.eye(X.shape[0]) * 1e-14
-        _ = np.linalg.cholesky(X_reg)
+        X_reg = X + np.eye(X.shape[0]) * 1e-14  # regularize the input matrix to make it PD if it is PSD
+        _ = np.linalg.cholesky(X_reg)           # apply the Cholesky decomposition to the regularized matrix, which fails if it is not PD
     except np.linalg.LinAlgError:
         return False
 
