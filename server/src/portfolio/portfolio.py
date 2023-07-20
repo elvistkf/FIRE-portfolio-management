@@ -19,6 +19,8 @@ class Portfolio:
 
         if isinstance(details, pd.DataFrame):
             if not is_matching_index(details.columns, Transaction.get_fields()):
+                print(details)
+                print(details.columns, Transaction.get_fields())
                 raise AttributeError("Expected matching columns from transaction details with table schema.")
             self.transactions = details
         elif isinstance(details, pd.Series):
@@ -32,7 +34,15 @@ class Portfolio:
         try:
             return self.summary
         except AttributeError:
-            return pd.DataFrame()
+            #TODO: replace the placeholder with actual logic
+            return pd.DataFrame(
+                [
+                    {"account": 1, "ticker": "QQQ", "total_shares": 35, "total_cost": 10011.1},
+                    {"account": 1, "ticker": "VOO", "total_shares": 20, "total_cost": 349.62},
+                    {"account": 1, "ticker": "TSLA", "total_shares": 5, "total_cost": 204.08},
+                    {"account": 2, "ticker": "VOO", "total_shares": 57, "total_cost": 20057.08},
+                ]
+            )
 
     def get_weights(self) -> pd.Series:
         return 0
