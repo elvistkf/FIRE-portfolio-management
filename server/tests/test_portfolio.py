@@ -1,5 +1,4 @@
 import pytest
-import numpy as np
 import pandas as pd
 import portfolio.portfolio as p
 import portfolio.common as common
@@ -44,7 +43,8 @@ def test_portfolio_init_with_missing_columns():
 
 
 def test_portfolio_init_with_mismatched_columns():
-    """Test Portfolio initialization with correct data type for details (DataFrame), but with mismatched columns. This should raise an AttributedError."""
+    """Test Portfolio initialization with correct data type for details (DataFrame), but with mismatched columns.
+    This should raise an AttributedError."""
     with pytest.raises(AttributeError, match="Expected matching columns from transaction details with table schema."):
         df = pd.DataFrame(data=[[0, 1, 2, 3, 4, 5]], columns=["id", "Shares", "price", "datetime", "account_no", "stock"])
         _ = p.Portfolio(details=df)

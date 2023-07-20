@@ -22,9 +22,9 @@ class Portfolio:
                 print(details)
                 print(details.columns, Transaction.get_fields())
                 raise AttributeError("Expected matching columns from transaction details with table schema.")
-            
+
             # Cast the decimal columns to int64 and float64
-            self.transactions = details.astype({"price": "float64", "shares": "int64"})     
+            self.transactions = details.astype({"price": "float64", "shares": "int64"})
         elif isinstance(details, pd.Series):
             pass
         elif details is None:
