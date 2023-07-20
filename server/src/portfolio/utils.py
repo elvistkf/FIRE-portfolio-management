@@ -74,7 +74,7 @@ def normalize(s: pd.Series | np.ndarray) -> pd.Series:
     return s / s.sum()
 
 
-def is_close(d1, d2) -> bool:
+def is_close(d1: pd.DataFrame | pd.Series, d2: pd.DataFrame | pd.Series) -> bool:
     if isinstance(d1, pd.DataFrame) and isinstance(d2, pd.DataFrame):
         d1 = d1.sort_index()
         d2 = d2.sort_index()

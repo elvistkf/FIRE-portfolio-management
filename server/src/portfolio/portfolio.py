@@ -1,7 +1,7 @@
 import sys
 import pandas as pd
 from sqlmodel import Session, select
-from .common import is_matching_index
+from .utils import is_matching_index
 
 sys.path.insert(0, "..")
 from schema import Transaction

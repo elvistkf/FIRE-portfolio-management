@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 from scipy.stats import norm
-from .common import is_psd, is_matching_index
+from .utils import is_psd, is_matching_index
 
 
 def validate_weights(w: pd.Series) -> None:
