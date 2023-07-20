@@ -1,5 +1,6 @@
 import sys
 import pandas as pd
+import numpy as np
 from sqlmodel import Session, select
 from .utils import is_matching_index
 
@@ -23,8 +24,8 @@ class Portfolio:
                 print(details.columns, Transaction.get_fields())
                 raise AttributeError("Expected matching columns from transaction details with table schema.")
 
-            # Cast the decimal columns to int64 and float64
-            self.transactions = details.astype({"price": "float64", "shares": "int64"})
+            # Cast the decimal columns to float64
+            self.transactions = details.astype({"amount": "float64", "shares": "float64"})
         elif isinstance(details, pd.Series):
             pass
         elif details is None:
@@ -32,15 +33,26 @@ class Portfolio:
         else:
             raise TypeError(f"Expected input details to be a DataFrame or a Series, instead found {type(details)}.")
 
-    def get_summary(self) -> pd.DataFrame:
+    def get_holdings(self) -> pd.DataFrame:
         try:
-            return self.summary
+            return self.holdings
         except AttributeError:
-            _tmp_df = self.transactions.copy()
-            _tmp_df["total_cost"] = _tmp_df["price"] * _tmp_df["shares"]
-            _tmp_df["total_shares"] = _tmp_df["shares"]
-            self.summary = _tmp_df.groupby(["account", "ticker"]).agg({"total_shares": sum, "total_cost": sum}).sort_index()
-            return self.summary
+            df = self.transactions[["account", "action", "ticker", "amount", "shares"]].copy()
+            df["buy"] = df["action"].map({"Buy": 1, "Sell": 0}) * df["shares"]
+            df["sell"] = df["action"].map({"Buy": 0, "Sell": 1}) * df["shares"]
+            df["net"] = df["buy"] - df["sell"]
+            df["total_cost"] = df["buy"] * df["amount"]
+
+
+            holdings = df.groupby(["account", "ticker"]).agg(
+                total_buy=pd.NamedAgg(column="buy", aggfunc=np.sum),
+                total_cost=pd.NamedAgg(column="total_cost", aggfunc=np.sum),
+                total_shares=pd.NamedAgg(column="net", aggfunc=np.sum)
+            )
+            holdings["book_value"] = (holdings["total_cost"] * holdings["total_shares"] / holdings["total_buy"]).apply(lambda x: round(x, 2))
+            holdings["avg_cost"] = (holdings["book_value"] / holdings["total_shares"]).apply(lambda x: round(x, 2))
+            self.holdings = holdings[["total_shares", "book_value", "avg_cost"]]
+            return self.holdings
 
     def get_weights(self) -> pd.Series:
         return 0

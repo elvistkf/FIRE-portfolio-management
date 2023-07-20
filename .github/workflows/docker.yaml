@@ -13,6 +13,12 @@ jobs:
 
             - name: Start containers
               run: make deploy
-              
+            
+            - name: Hello World
+              run: |
+                if curl -s localhost:49255/accounts | grep -o "Hello World"; then \
+                  echo "Succeeded"; else \
+                  exit 1; fi
+
             - name: Stop containers
               run: make teardown

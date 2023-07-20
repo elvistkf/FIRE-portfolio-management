@@ -78,4 +78,5 @@ def is_close(d1: pd.DataFrame | pd.Series, d2: pd.DataFrame | pd.Series) -> bool
     if isinstance(d1, pd.DataFrame) and isinstance(d2, pd.DataFrame):
         d1 = d1.sort_index()
         d2 = d2.sort_index()
-    return np.all(abs(d1 - d2) <= 1e-10)
+        return np.all((np.abs(d1 - d2) <= 1e-10) | (pd.isna(d1) & pd.isna(d2)))
+    return np.all(np.abs(d1 - d2) <= 1e-10)
