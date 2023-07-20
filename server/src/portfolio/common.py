@@ -72,3 +72,10 @@ def normalize(s: pd.Series | np.ndarray) -> pd.Series:
             "Expected s to be non-negative array/Series."
         )
     return s / s.sum()
+
+
+def is_close(d1, d2) -> bool:
+    if isinstance(d1, pd.DataFrame) and isinstance(d2, pd.DataFrame):
+        d1 = d1.sort_index()
+        d2 = d2.sort_index()
+    return np.all(abs(d1 - d2) <= 1e-10)

@@ -2,11 +2,12 @@ import pytest
 import numpy as np
 import pandas as pd
 import portfolio.portfolio as p
+import portfolio.common as common
 import schema
 
 
 @pytest.fixture
-def transaction():
+def transactions():
     return [
         schema.Transaction(id=1, date="2023-01-01T00:00:00", account=1, ticker="QQQ", price=260, shares=10),
         schema.Transaction(id=2, date="2023-01-15T00:00:00", account=1, ticker="VOO", price=349.62, shares=20),
@@ -19,13 +20,13 @@ def transaction():
 
 
 @pytest.fixture
-def transaction_df(transaction):
-    return pd.DataFrame([t.dict() for t in transaction])
+def transactions_df(transactions):
+    return pd.DataFrame([t.dict() for t in transactions])
 
 
-def test_portfolio_init(transaction_df):
+def test_portfolio_init(transactions_df):
     """Test Portfolio initialization with valid transaction DataFrame"""
-    _ = p.Portfolio(transaction_df)
+    _ = p.Portfolio(transactions_df)
     assert True
 
 
@@ -49,15 +50,16 @@ def test_portfolio_init_with_mismatched_columns():
         _ = p.Portfolio(details=df)
 
 
-def test_portfolio_get_summary(transaction_df):
+def test_portfolio_get_summary(transactions_df):
     """Test Portfolio.get_summary with valid transaction DataFrame"""
     expected = pd.DataFrame(
         [
             {"account": 1, "ticker": "QQQ", "total_shares": 35, "total_cost": 10011.1},
-            {"account": 1, "ticker": "VOO", "total_shares": 20, "total_cost": 349.62},
-            {"account": 1, "ticker": "TSLA", "total_shares": 5, "total_cost": 204.08},
+            {"account": 1, "ticker": "VOO", "total_shares": 20, "total_cost": 6992.40},
+            {"account": 1, "ticker": "TSLA", "total_shares": 5, "total_cost": 1020.40},
             {"account": 2, "ticker": "VOO", "total_shares": 57, "total_cost": 20057.08},
         ]
-    )
-    portfolio = p.Portfolio(details=transaction_df)
-    assert np.all(portfolio.get_summary() == expected)
+    ).set_index(["account", "ticker"])
+    portfolio = p.Portfolio(details=transactions_df)
+    print(expected)
+    assert common.is_close(expected, portfolio.get_summary())

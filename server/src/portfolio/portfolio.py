@@ -22,7 +22,9 @@ class Portfolio:
                 print(details)
                 print(details.columns, Transaction.get_fields())
                 raise AttributeError("Expected matching columns from transaction details with table schema.")
-            self.transactions = details
+            
+            # Cast the decimal columns to int64 and float64
+            self.transactions = details.astype({"price": "float64", "shares": "int64"})     
         elif isinstance(details, pd.Series):
             pass
         elif details is None:
@@ -34,15 +36,11 @@ class Portfolio:
         try:
             return self.summary
         except AttributeError:
-            #TODO: replace the placeholder with actual logic
-            return pd.DataFrame(
-                [
-                    {"account": 1, "ticker": "QQQ", "total_shares": 35, "total_cost": 10011.1},
-                    {"account": 1, "ticker": "VOO", "total_shares": 20, "total_cost": 349.62},
-                    {"account": 1, "ticker": "TSLA", "total_shares": 5, "total_cost": 204.08},
-                    {"account": 2, "ticker": "VOO", "total_shares": 57, "total_cost": 20057.08},
-                ]
-            )
+            _tmp_df = self.transactions.copy()
+            _tmp_df["total_cost"] = _tmp_df["price"] * _tmp_df["shares"]
+            _tmp_df["total_shares"] = _tmp_df["shares"]
+            self.summary = _tmp_df.groupby(["account", "ticker"]).agg({"total_shares": sum, "total_cost": sum}).sort_index()
+            return self.summary
 
     def get_weights(self) -> pd.Series:
         return 0
