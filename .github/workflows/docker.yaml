@@ -16,7 +16,8 @@ jobs:
             
             - name: Hello World
               run: |
-                if curl -s localhost:49255/accounts | grep -o "Hello World"; then \
+                sleep .5
+                if curl -s localhost:49255 | grep -o "Hello World"; then \
                   echo "Succeeded"; else \
                   exit 1; fi
 
