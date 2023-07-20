@@ -13,9 +13,9 @@ def validate_weights(w: pd.Series) -> None:
     """
     if not isinstance(w, pd.Series):
         raise TypeError(f"Expected weights w to be a Series, instead found {type(w)}.")
-    if w.sum() != 1:        # the sum of the weights must equal to 1
+    if w.sum() != 1:  # the sum of the weights must equal to 1
         raise ValueError(f"Expected the sum of weights w to be 1, instead found {w.sum()}.")
-    if np.any(w < 0):       # all elements in weights must be non-negative
+    if np.any(w < 0):  # all elements in weights must be non-negative
         raise ValueError("Expected all elements in weights w to be non-negative.")
 
 
@@ -125,7 +125,7 @@ def var_gaussian(w: pd.Series, er: pd.Series, cov: pd.DataFrame, alpha: float = 
 
     mean = expected_return(w, er)
     vol = volatility(w, cov)
-    return -norm.ppf(1-alpha, mean, vol)
+    return -norm.ppf(1 - alpha, mean, vol)
 
 
 def var_historic(r: pd.Series | pd.DataFrame, alpha: float = 0.95, w: pd.Series | None = None) -> float | pd.Series:
@@ -147,7 +147,7 @@ def var_historic(r: pd.Series | pd.DataFrame, alpha: float = 0.95, w: pd.Series 
     if not isinstance(alpha, float):
         TypeError(f"Expected confidence level alpha to be a float, instead found {type(alpha)}.")
     if isinstance(r, pd.Series):
-        return -np.percentile(r.dropna(), q=int((1-alpha) * 100), axis=0)
+        return -np.percentile(r.dropna(), q=int((1 - alpha) * 100), axis=0)
     elif isinstance(r, pd.DataFrame):
         var = r.aggregate(var_historic, alpha=alpha)
         if w is None:

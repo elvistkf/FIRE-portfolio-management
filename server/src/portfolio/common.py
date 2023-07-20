@@ -32,14 +32,15 @@ def is_psd(X: pd.DataFrame | np.ndarray) -> bool:
     """
     if not isinstance(X, pd.DataFrame) and not isinstance(X, np.ndarray):
         raise TypeError(
-            f"Expected input matrix X to be DataFrame or ndarray, instead found {type(X)}.")
+            f"Expected input matrix X to be DataFrame or ndarray, instead found {type(X)}."
+        )
 
     if isinstance(X, pd.DataFrame):
         X = X.to_numpy()
 
-    if X.shape[0] != X.shape[1]:        # X must be a squared matrix to be PSD
+    if X.shape[0] != X.shape[1]:  # X must be a squared matrix to be PSD
         return False
-    if not np.all(X - X.T == 0):        # X must be symmetric
+    if not np.all(X - X.T == 0):  # X must be symmetric
         return False
 
     try:
@@ -52,8 +53,9 @@ def is_psd(X: pd.DataFrame | np.ndarray) -> bool:
 
     return True
 
+
 def normalize(s: pd.Series | np.ndarray) -> pd.Series:
-    """Normalize the a positive (element-wise) array/Series to sum up to 1
+    """Normalize the a non-negative (element-wise) array/Series to sum up to 1
 
     Args:
         s (pd.Series | np.ndarray): Input array/Series
@@ -62,5 +64,11 @@ def normalize(s: pd.Series | np.ndarray) -> pd.Series:
         pd.Series: Normalized array/Series
     """
     if not (isinstance(s, pd.Series) or isinstance(s, np.ndarray)):
-        raise TypeError(f"Expected s to be a Series or ndarray, instead found {type(s)}")
+        raise TypeError(
+            f"Expected s to be a Series or ndarray, instead found {type(s)}"
+        )
+    if np.any(s < 0):
+        raise ValueError(
+            "Expected s to be non-negative array/Series."
+        )
     return s / s.sum()
