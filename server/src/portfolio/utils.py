@@ -74,9 +74,9 @@ def normalize(s: pd.Series | np.ndarray) -> pd.Series:
     return s / s.sum()
 
 
-def is_close(d1: pd.DataFrame | pd.Series, d2: pd.DataFrame | pd.Series) -> bool:
-    if isinstance(d1, pd.DataFrame) and isinstance(d2, pd.DataFrame):
+def is_close(d1: pd.DataFrame | pd.Series, d2: pd.DataFrame | pd.Series, threshold: float = 1e-5) -> bool:
+    if isinstance(d1, pd.DataFrame) and isinstance(d2, pd.DataFrame) or isinstance(d1, pd.Series) and isinstance(d2, pd.Series):
         d1 = d1.sort_index()
         d2 = d2.sort_index()
-        return np.all((np.abs(d1 - d2) <= 1e-10) | (pd.isna(d1) & pd.isna(d2)))
-    return np.all(np.abs(d1 - d2) <= 1e-10)
+        return np.all((np.abs(d1 - d2) <= threshold) | (pd.isna(d1) & pd.isna(d2)))
+    return np.all(np.abs(d1 - d2) <= threshold)

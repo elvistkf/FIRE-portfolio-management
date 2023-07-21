@@ -2,6 +2,7 @@ import pytest
 import pandas as pd
 import numpy as np
 import portfolio.portfolio as p
+import portfolio.utils as utils
 import schema
 
 
@@ -17,7 +18,9 @@ class TestPortfolio:
             schema.Transaction(id=6, date="2023-03-01T00:00:00", account=1, action="Buy", ticker="QQQ", amount=292.43, shares=10),
             schema.Transaction(id=7, date="2023-03-01T00:00:00", account=1, action="Buy", ticker="TSLA", amount=204.08, shares=5),
             schema.Transaction(id=8, date="2023-03-12T00:00:00", account=2, action="Buy", ticker="VOO", amount=360.08, shares=5),
-            schema.Transaction(id=9, date="2023-02-01T00:00:00", account=1, action="Sell", ticker="QQQ", amount=299.12, shares=25)
+            schema.Transaction(id=9, date="2023-03-13T00:00:00", account=1, action="Sell", ticker="QQQ", amount=299.12, shares=25),
+            schema.Transaction(id=10, date="2023-04-01T00:00:00", account=3, action="Buy", ticker="QQQ", amount=300.00, shares=7),
+            schema.Transaction(id=11, date="2023-04-02T00:00:00", account=3, action="Sell", ticker="QQQ", amount=310.99, shares=7)
         ]
         return pd.DataFrame([t.dict() for t in transactions])
 
@@ -49,8 +52,8 @@ class TestPortfolio:
             df = pd.DataFrame(data=[[0, 1, 2, 3, 4, 5]], columns=["id", "Shares", "price", "datetime", "account_no", "stock"])
             _ = p.Portfolio(details=df)
 
-    def test_portfolio_get_summary(self, portfolio):
-        """Test Portfolio.get_summary with valid transaction DataFrame"""
+    def test_portfolio_get_holdings(self, portfolio):
+        """Test Portfolio.get_holdings() with valid transaction DataFrame"""
         expected = pd.DataFrame(
             [
                 {"account": 1, "ticker": "QQQ", "total_shares": 10, "book_value": 2860.31, "avg_cost": 286.03},
@@ -59,4 +62,15 @@ class TestPortfolio:
                 {"account": 2, "ticker": "VOO", "total_shares": 57, "book_value": 20057.08, "avg_cost": 351.88},
             ]
         ).set_index(["account", "ticker"])
-        assert np.all(portfolio.get_holdings() - expected == 0)
+        holdings = portfolio.get_holdings()
+
+        assert np.all(holdings - expected == 0)
+
+    def test_portfolio_get_weights(self, portfolio):
+        """Test Portfolio.get_weights() with valid transaction DataFrame"""
+        expected = pd.Series(
+            [0.285714, 0.142857, 0.571429],
+            index = ["QQQ", "TSLA", "VOO"]
+        )
+        weights = portfolio.get_weights(1)
+        assert utils.is_close(weights, expected)

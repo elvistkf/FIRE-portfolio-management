@@ -20,7 +20,7 @@ Note that you do not need to have the above installed in your systems except Doc
 
 ## Prerequisite
 The following operating systems are tested and supported:
-- Windows
+- Windows (with WSL)
 - MacOS
 - Linux
 - Synology DiskStation Manager (on x86-based NAS)
@@ -40,4 +40,8 @@ cd FIRE-portfolio-management
 and run the following docker command:
 ```
 docker compose up -d
+```
+or equivalently,
+```
+make deploy
 ```
