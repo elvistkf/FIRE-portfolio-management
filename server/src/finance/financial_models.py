@@ -1,8 +1,11 @@
+import sys
 import pandas as pd
 import numpy as np
 from scipy.stats import norm
 from .utils import is_psd, is_matching_index
 
+sys.path.insert(0, "..")
+from exceptions import MismatchedIndexException
 
 def validate_weights(w: pd.Series) -> None:
     """Validate if the provided weights w is valid subject to practical constraints.
@@ -33,7 +36,7 @@ def expected_return(w: pd.Series, er: pd.Series) -> float:
     if not isinstance(er, pd.Series):
         raise TypeError(f"Expected expected return er to be a Series, instead found {type(er)}.")
     if not is_matching_index(w.index, er.index):
-        raise AttributeError("Expected matching index from weights w and expected return er.")
+        raise MismatchedIndexException("Expected matching index from weights w and expected return er.")
 
     return w.T @ er
 
@@ -54,9 +57,9 @@ def volatility(w: pd.Series, cov: pd.DataFrame) -> float:
     if not is_psd(cov):
         raise ValueError("Expected covariance matrix cov to be positive semi-definiteness.")
     if not is_matching_index(w.index, cov.index):
-        raise AttributeError("Expected matching index from weights w and covariance matrix cov.")
+        raise MismatchedIndexException("Expected matching index from weights w and covariance matrix cov.")
     if not is_matching_index(cov.index, cov.columns, strict=True):
-        raise AttributeError("Expected matching index and columns for the covariance matrix.")
+        raise MismatchedIndexException("Expected matching index and columns for the covariance matrix.")
 
     return np.sqrt(w.T @ cov @ w)
 

@@ -1,6 +1,7 @@
 import pytest
 import pandas as pd
-import portfolio.financial_models as models
+import finance.financial_models as models
+from exceptions import MismatchedIndexException
 
 
 @pytest.fixture
@@ -61,5 +62,5 @@ class TestExpectedReturn:
         """
         weights.index = ["A", "B", "C"]
         er.index = ["1", "2", "3"]
-        with pytest.raises(AttributeError):
+        with pytest.raises(MismatchedIndexException):
             _ = models.expected_return(w=weights, er=er)

@@ -1,12 +1,15 @@
 import pytest
 import pandas as pd
 import numpy as np
-import portfolio.portfolio as p
-import portfolio.utils as utils
+import finance.portfolio as p
+import finance.utils as utils
 import schema
+
+from exceptions import MismatchedIndexException
 
 
 class TestPortfolio:
+
     @pytest.fixture
     def transactions_df(self):
         transactions = [
@@ -41,14 +44,14 @@ class TestPortfolio:
     def test_portfolio_init_with_missing_columns(self):
         """Test Portfolio initialization with correct data type for details (DataFrame), but with missing columns.
         This should raise an AttributeError."""
-        with pytest.raises(AttributeError, match="Expected matching columns from transaction details with table schema."):
+        with pytest.raises(MismatchedIndexException):
             df = pd.DataFrame(data=[[0, 1, 2, 3]])
             _ = p.Portfolio(details=df)
 
     def test_portfolio_init_with_mismatched_columns(self):
         """Test Portfolio initialization with correct data type for details (DataFrame), but with mismatched columns.
         This should raise an AttributedError."""
-        with pytest.raises(AttributeError, match="Expected matching columns from transaction details with table schema."):
+        with pytest.raises(MismatchedIndexException):
             df = pd.DataFrame(data=[[0, 1, 2, 3, 4, 5]], columns=["id", "Shares", "price", "datetime", "account_no", "stock"])
             _ = p.Portfolio(details=df)
 
@@ -63,14 +66,14 @@ class TestPortfolio:
             ]
         ).set_index(["account", "ticker"])
         holdings = portfolio.get_holdings()
-
         assert np.all(holdings - expected == 0)
 
-    def test_portfolio_get_weights(self, portfolio):
+    @pytest.mark.parametrize("account,expected", [
+        (None, pd.Series([0.108695, 0.836957, 0.054348], index=["QQQ", "VOO", "TSLA"])),
+        (1, pd.Series([0.285714, 0.142857, 0.571429], index=["QQQ", "TSLA", "VOO"])),
+        (2, pd.Series([1], index=["VOO"]))
+    ])
+    def test_portfolio_get_weights(self, portfolio, account, expected):
         """Test Portfolio.get_weights() with valid transaction DataFrame"""
-        expected = pd.Series(
-            [0.285714, 0.142857, 0.571429],
-            index = ["QQQ", "TSLA", "VOO"]
-        )
-        weights = portfolio.get_weights(1)
+        weights = portfolio.get_weights(account)
         assert utils.is_close(weights, expected)

@@ -1,7 +1,7 @@
 import pytest
 import pandas as pd
 import numpy as np
-import portfolio.utils as utils
+import finance.utils as utils
 
 
 @pytest.fixture

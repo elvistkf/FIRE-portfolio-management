@@ -1,31 +1,34 @@
 import sys
 import pandas as pd
 import numpy as np
-from typing import Optional
 from sqlmodel import Session, select
-from .utils import is_matching_index
+from .utils import is_matching_index, normalize
 
 sys.path.insert(0, "..")
 from schema import Transaction
 from database import engine
+from exceptions import MismatchedIndexException
 
 
 class Portfolio:
-    def __init__(self, details: Optional[pd.DataFrame | pd.Series] = None) -> None:
+    def __init__(self, details: pd.DataFrame | pd.Series | None = None) -> None:
         """Initialize the Portfolio object with either transaction history or shares/weights distribution.
 
         Args:
             details (pd.DataFrame | pd.Series | None, optional): Transaction history or shares/weights distribution for the portfolio.
-            If None is passed as the argument, the transaction history from the database will be automatically retrieved. Defaults to None.
+                If None is passed as the argument, the transaction history from the database will be automatically retrieved. Defaults to None.
+
+        Raises:
+            TypeError: Raised when the provided details is of invalid data types
+            MismatchedIndexException: Raised when the details DataFrame does not have the appropriate columns
         """
         if isinstance(details, pd.DataFrame):
             if not is_matching_index(details.columns, Transaction.get_fields()):
-                print(details)
-                print(details.columns, Transaction.get_fields())
-                raise AttributeError("Expected matching columns from transaction details with table schema.")
-
-            # Cast the decimal columns to float64
+                raise MismatchedIndexException("Expected matching columns from transaction details with table schema.")
+            
+            # Cast the decimal columns to float64    
             self.transactions = details.astype({"amount": "float64", "shares": "float64"})
+            
         elif isinstance(details, pd.Series):
             pass
         elif details is None:
@@ -58,13 +61,29 @@ class Portfolio:
             self.holdings = holdings[["total_shares", "book_value", "avg_cost"]].dropna()
             return self.holdings
 
-    def get_weights(self, account: Optional[int] = None) -> pd.Series:
-        # TODO; complete the case when account is None
-        holdings = self.get_holdings()
-        if account is not None and isinstance(account, int):
-            total_shares_by_account = holdings.reset_index().groupby("account").agg({"total_shares": np.sum})
-            return (holdings / total_shares_by_account)["total_shares"][1]
-        return 0
+    def get_weights(self, account: int | None = None) -> pd.Series:
+        """Calculate and return the weights of each ticker of the portfolio by account
+
+        Args:
+            account (int | None, optional): The targeted account number. 
+            If None is passed as argument, holdings in all accounts will be aggregated in the calculation. Defaults to None.
+
+        Raises:
+            TypeError: Raised when the provided account number is not integer or None.
+
+        Returns:
+            pd.Series: The weights of each ticker by account.
+        """
+
+        holdings = self.get_holdings().copy()
+        if account is None:
+            holdings = holdings.reset_index().groupby("ticker").sum()
+            return normalize(holdings["total_shares"])
+        elif isinstance(account, int):
+            total_shares_by_account = holdings.reset_index().groupby("account").sum()
+            return (holdings / total_shares_by_account)["total_shares"][account]
+        else:
+            raise TypeError(f"Expected account number to be an integer or None, instead found {type(account)}.")
 
     def retrieve_transactions(self) -> pd.DataFrame:
         """Retrieve transaction history from the database

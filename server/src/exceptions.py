@@ -1,0 +1,2 @@
+class MismatchedIndexException(Exception):
+    pass
