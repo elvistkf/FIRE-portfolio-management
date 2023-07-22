@@ -49,16 +49,24 @@ class Portfolio:
             df["buy"] = df["action"].map({"Buy": 1, "Sell": 0}) * df["shares"]
             df["sell"] = df["action"].map({"Buy": 0, "Sell": 1}) * df["shares"]
             df["net"] = df["buy"] - df["sell"]
-            df["cost"] = df["buy"] * df["amount"]
+            df["cost"] = df["action"].map({"Buy": 1, "Sell": 0}) * df["amount"]
+            df["proceeds"] = df["action"].map({"Buy": 0, "Sell": 1}) * df["amount"]
 
             holdings = df.groupby(["account", "ticker"]).agg(
                 total_buy=pd.NamedAgg(column="buy", aggfunc=np.sum),
                 total_cost=pd.NamedAgg(column="cost", aggfunc=np.sum),
-                total_shares=pd.NamedAgg(column="net", aggfunc=np.sum)
+                total_shares=pd.NamedAgg(column="net", aggfunc=np.sum),
+                total_shares_sold=pd.NamedAgg(column="sell", aggfunc=np.sum),
+                total_proceeds=pd.NamedAgg(column="proceeds", aggfunc=np.sum)
             )
-            holdings["book_value"] = (holdings["total_cost"] * holdings["total_shares"] / holdings["total_buy"]).apply(lambda x: round(x, 2))
-            holdings["avg_cost"] = (holdings["book_value"] / holdings["total_shares"]).apply(lambda x: round(x, 2))
-            self.holdings = holdings[["total_shares", "book_value", "avg_cost"]].dropna()
+            holdings["avg_cost"] = (holdings["total_cost"] / holdings["total_buy"])
+            holdings["book_value"] = (holdings["avg_cost"] * holdings["total_shares"])
+            holdings["realized_gain"] = (holdings["total_proceeds"] - holdings["total_shares_sold"] * holdings["avg_cost"])
+
+            for col in ["avg_cost", "book_value", "realized_gain"]:
+                holdings[col] = holdings[col].apply(lambda x: round(x, 2))
+
+            self.holdings = holdings[["total_shares", "book_value", "avg_cost", "realized_gain"]].dropna()
             return self.holdings
 
     def get_weights(self, account: int | None = None) -> pd.Series:
@@ -76,6 +84,7 @@ class Portfolio:
         """
 
         holdings = self.get_holdings().copy()
+        holdings = holdings.loc[holdings["total_shares"] > 0]
         if account is None:
             holdings = holdings.reset_index().groupby("ticker").sum()
             return normalize(holdings["total_shares"])

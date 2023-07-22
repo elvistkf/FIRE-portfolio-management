@@ -6,6 +6,7 @@ import yfinance as yf
 import functools
 import threading
 import time
+import logging
 
 
 def data_cache(maxsize: int = 128, expiration_seconds: int | float = 3600) -> Callable:
@@ -24,22 +25,27 @@ def data_cache(maxsize: int = 128, expiration_seconds: int | float = 3600) -> Ca
     cache = {}
     lock = threading.Lock()
 
+    # Set up logging
+    logging.basicConfig(level=logging.INFO)
+    logger = logging.getLogger("CacheMetrics")
+
     def decorator(func: Callable) -> Callable:
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
-            if np.all([isinstance(arg, list) for arg in args]):
-                key = (tuple(*args), frozenset(kwargs.items()))
-            else:
-                key = (args, frozenset(kwargs.items()))
+            normalized_args = tuple(*args) if np.all([isinstance(arg, list) for arg in args]) else args
+            normalized_kwargs = frozenset(kwargs.items())
+            key = (normalized_args, normalized_kwargs)
             # Check if the result is already cached
             with lock:
                 if key in cache:
                     result, timestamp = cache[key]
                     current_time = time.time()
                     # Check if the cached result has expired
-                    if current_time - timestamp <= expiration_seconds:
+                    if result is not None and current_time - timestamp <= expiration_seconds:
+                        logger.info(f"Cache hit: {func.__name__}{normalized_args}, {kwargs}")
                         return result
                     else:
+                        logger.info(f"Cache expired: {func.__name__}{normalized_args}, {kwargs}")
                         del cache[key]
 
             # If the result is not cached or has expired, call the function and cache the result
@@ -58,7 +64,7 @@ def data_cache(maxsize: int = 128, expiration_seconds: int | float = 3600) -> Ca
     return decorator
 
 
-@data_cache(maxsize=100, expiration_seconds=10)
+@data_cache(maxsize=512, expiration_seconds=7200)
 def get_tickers(tickers: Tuple[str] | List[str] | str, start: datetime | str = "2023-01-01", period: str = "1d") -> pd.DataFrame:
     """Retrieve the tickers data
 
