@@ -1,11 +1,9 @@
-import sys
 import pandas as pd
 import numpy as np
 from scipy.stats import norm
 from .utils import is_psd, is_matching_index
-
-sys.path.insert(0, "..")
 from exceptions import MismatchedIndexException
+
 
 def validate_weights(w: pd.Series) -> None:
     """Validate if the provided weights w is valid subject to practical constraints.

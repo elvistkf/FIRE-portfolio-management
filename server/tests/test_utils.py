@@ -17,7 +17,7 @@ def s_series(s_ndarray):
 class TestIsPSD:
     @pytest.fixture
     def X_ndarray(self):
-        A = np.random.rand(10, 10)
+        A = np.random.rand(10, 1)
         X = A @ A.T
         return X
 
@@ -60,3 +60,11 @@ class TestNormalize:
     def test_normalize_negative_ndarray(self, arr, expected):
         with pytest.raises(ValueError):
             _ = utils.normalize(-arr)
+
+
+class TestIsListOfType:
+    pass
+
+
+class TestIsTupleOfType:
+    pass

@@ -61,8 +61,7 @@ class TestPortfolio:
                 {"account": 1, "ticker": "QQQ", "total_shares": 10, "book_value": 2860.31, "avg_cost": 286.03, "realized_gain": 327.21},
                 {"account": 1, "ticker": "VOO", "total_shares": 20, "book_value": 6992.40, "avg_cost": 349.62, "realized_gain": 0},
                 {"account": 1, "ticker": "TSLA", "total_shares": 5, "book_value": 1020.40, "avg_cost": 204.08, "realized_gain": 0},
-                {"account": 2, "ticker": "VOO", "total_shares": 57, "book_value": 20057.08, "avg_cost": 351.88, "realized_gain": 0},
-                {"account": 3, "ticker": "MSFT", "total_shares": 0, "book_value": 0, "avg_cost": 340, "realized_gain": 50}
+                {"account": 2, "ticker": "VOO", "total_shares": 57, "book_value": 20057.08, "avg_cost": 351.88, "realized_gain": 0}
             ]
         ).set_index(["account", "ticker"])
         holdings = portfolio.get_holdings()

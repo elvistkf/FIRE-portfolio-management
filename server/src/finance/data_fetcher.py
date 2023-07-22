@@ -1,6 +1,5 @@
 from typing import Tuple, List, Callable
 from datetime import datetime
-import numpy as np
 import pandas as pd
 import yfinance as yf
 import functools
@@ -12,6 +11,7 @@ if __name__ == "__main__":
     from utils import is_list_of_type, is_tuple_of_type
 else:
     from .utils import is_list_of_type, is_tuple_of_type
+
 
 def data_cache(maxsize: int = 128, expiration_seconds: int | float = 3600) -> Callable:
     """A custom cache decorator that caches the results of function evaluations for a specified duration and with a maximum cache size.
@@ -36,9 +36,10 @@ def data_cache(maxsize: int = 128, expiration_seconds: int | float = 3600) -> Ca
     def decorator(func: Callable) -> Callable:
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
-            normalized_args = tuple(*args) if np.all([isinstance(arg, list) for arg in args]) else args
+            normalized_args = tuple(*args) if is_tuple_of_type(args, list) or is_tuple_of_type(args, tuple) else args
             normalized_kwargs = frozenset(kwargs.items())
             key = (normalized_args, normalized_kwargs)
+
             # Check if the result is already cached
             with lock:
                 if key in cache:
@@ -69,7 +70,7 @@ def data_cache(maxsize: int = 128, expiration_seconds: int | float = 3600) -> Ca
 
 
 @data_cache(maxsize=512, expiration_seconds=7200)
-def get_tickers(tickers: Tuple[str] | List[str] | str, start: datetime | str = "2023-01-01", period: str = "1d") -> pd.DataFrame:
+def get_tickers(tickers: Tuple[str] | List[str] | str, start: datetime | str = "2018-01-01", period: str = "1d") -> pd.DataFrame:
     """Retrieve the tickers data
 
     Args:

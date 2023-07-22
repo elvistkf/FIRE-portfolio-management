@@ -3,8 +3,6 @@ from database import engine
 from fastapi import APIRouter
 from sqlmodel import Session, select
 
-import sys
-sys.path.insert(0, '..')
 
 router = APIRouter(
     prefix="/accounts",

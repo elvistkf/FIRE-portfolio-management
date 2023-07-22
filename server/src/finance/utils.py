@@ -75,12 +75,16 @@ def normalize(s: pd.Series | np.ndarray) -> pd.Series:
     return s / s.sum()
 
 
+def is_iterable_of_type(var: Any, itype: Type, dtype: Type):
+    return isinstance(var, itype) and np.all([isinstance(item, dtype) for item in var])
+
+
 def is_list_of_type(var: Any, dtype: Type) -> bool:
-    return isinstance(var, list) and np.all([isinstance(item, dtype) for item in var])
+    return is_iterable_of_type(var, list, dtype)
 
 
 def is_tuple_of_type(var: Any, dtype: Type) -> bool:
-    return isinstance(var, tuple) and np.all([isinstance(item, dtype) for item in var])
+    return is_iterable_of_type(var, tuple, dtype)
 
 
 def is_close(d1: pd.DataFrame | pd.Series | float, d2: pd.DataFrame | pd.Series | float, threshold: float = 1e-5) -> bool:

@@ -1,13 +1,11 @@
-import sys
 import pandas as pd
 import numpy as np
 from sqlmodel import Session, select
 from .utils import is_matching_index, normalize
 
-sys.path.insert(0, "..")
-from schema import Transaction
-from database import engine
 from exceptions import MismatchedIndexException
+from database import engine
+from schema import Transaction
 
 
 class Portfolio:
@@ -25,14 +23,14 @@ class Portfolio:
         if isinstance(details, pd.DataFrame):
             if not is_matching_index(details.columns, Transaction.get_fields()):
                 raise MismatchedIndexException("Expected matching columns from transaction details with table schema.")
-            
-            # Cast the decimal columns to float64    
+
+            # Cast the decimal columns to float64
             self.transactions = details.astype({"amount": "float64", "shares": "float64"})
-            
+
         elif isinstance(details, pd.Series):
             pass
         elif details is None:
-            self.transactions = self.retrieve_transactions()
+            self.transactions = self.retrieve_transactions().astype({"amount": "float64", "shares": "float64"})
         else:
             raise TypeError(f"Expected input details to be a DataFrame or a Series, instead found {type(details)}.")
 
@@ -63,10 +61,12 @@ class Portfolio:
             holdings["book_value"] = (holdings["avg_cost"] * holdings["total_shares"])
             holdings["realized_gain"] = (holdings["total_proceeds"] - holdings["total_shares_sold"] * holdings["avg_cost"])
 
-            for col in ["avg_cost", "book_value", "realized_gain"]:
-                holdings[col] = holdings[col].apply(lambda x: round(x, 2))
+            rounding_columns = ["avg_cost", "book_value", "realized_gain"]
+            holdings[rounding_columns] = holdings[rounding_columns].applymap(lambda x: round(x, 2))
 
-            self.holdings = holdings[["total_shares", "book_value", "avg_cost", "realized_gain"]].dropna()
+            self.holdings = holdings[["total_shares", "book_value", "avg_cost", "realized_gain"]] \
+                .loc[holdings["total_shares"] > 0] \
+                .dropna()
             return self.holdings
 
     def get_weights(self, account: int | None = None) -> pd.Series:
@@ -103,4 +103,4 @@ class Portfolio:
         with Session(engine) as session:
             statement = select(Transaction)
             results = session.exec(statement).all()
-        return pd.DataFrame(results)
+        return pd.DataFrame([t.dict() for t in results])

@@ -1,9 +1,7 @@
-from schema import Transaction
-from database import engine
 from fastapi import APIRouter
-from sqlmodel import Session, select, func
-import sys
-sys.path.insert(0, '..')
+import json
+import finance.portfolio as p
+
 
 router = APIRouter(
     prefix="/portfolio",
@@ -12,14 +10,7 @@ router = APIRouter(
 
 
 @router.get("/")
-async def get_porfolio():
-    with Session(engine) as session:
-        statement = select(
-            Transaction.account,
-            Transaction.ticker,
-            func.sum(Transaction.shares).label("total_shares"),
-            (func.sum(Transaction.price * Transaction.shares) /
-                func.sum(Transaction.shares)).label("average_cost")
-        ).group_by(Transaction.account, Transaction.ticker)
-        results = session.exec(statement).all()
-    return results
+async def get_holdings():
+    portfolio = p.Portfolio()
+    holdings = portfolio.get_holdings().reset_index().to_json(orient="records")
+    return json.loads(holdings)
