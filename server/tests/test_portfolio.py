@@ -1,6 +1,5 @@
 import pytest
 import pandas as pd
-import numpy as np
 import finance.portfolio as p
 import finance.utils as utils
 import schema
@@ -14,16 +13,16 @@ class TestPortfolio:
     def transactions_df(self):
         transactions = [
             schema.Transaction(id=1, date="2023-01-01T00:00:00", account=1, action="Deposit", amount=50000),
-            schema.Transaction(id=2, date="2023-01-01T00:00:00", account=1, action="Buy", ticker="QQQ", amount=260, shares=10),
-            schema.Transaction(id=3, date="2023-01-15T00:00:00", account=1, action="Buy", ticker="VOO", amount=349.62, shares=20),
-            schema.Transaction(id=4, date="2023-01-16T00:00:00", account=2, action="Buy", ticker="VOO", amount=351.09, shares=52),
-            schema.Transaction(id=5, date="2023-02-01T00:00:00", account=1, action="Buy", ticker="QQQ", amount=299.12, shares=15),
-            schema.Transaction(id=6, date="2023-03-01T00:00:00", account=1, action="Buy", ticker="QQQ", amount=292.43, shares=10),
-            schema.Transaction(id=7, date="2023-03-01T00:00:00", account=1, action="Buy", ticker="TSLA", amount=204.08, shares=5),
-            schema.Transaction(id=8, date="2023-03-12T00:00:00", account=2, action="Buy", ticker="VOO", amount=360.08, shares=5),
-            schema.Transaction(id=9, date="2023-03-13T00:00:00", account=1, action="Sell", ticker="QQQ", amount=299.12, shares=25),
-            schema.Transaction(id=10, date="2023-04-01T00:00:00", account=3, action="Buy", ticker="QQQ", amount=300.00, shares=7),
-            schema.Transaction(id=11, date="2023-04-02T00:00:00", account=3, action="Sell", ticker="QQQ", amount=310.99, shares=7)
+            schema.Transaction(id=2, date="2023-01-01T00:00:00", account=1, action="Buy", ticker="QQQ", amount=2600, shares=10),
+            schema.Transaction(id=3, date="2023-01-15T00:00:00", account=1, action="Buy", ticker="VOO", amount=6992.4, shares=20),
+            schema.Transaction(id=4, date="2023-01-16T00:00:00", account=2, action="Buy", ticker="VOO", amount=18256.68, shares=52),
+            schema.Transaction(id=5, date="2023-02-01T00:00:00", account=1, action="Buy", ticker="QQQ", amount=4486.8, shares=15),
+            schema.Transaction(id=6, date="2023-03-01T00:00:00", account=1, action="Buy", ticker="QQQ", amount=2924.3, shares=10),
+            schema.Transaction(id=7, date="2023-03-01T00:00:00", account=1, action="Buy", ticker="TSLA", amount=1020.4, shares=5),
+            schema.Transaction(id=8, date="2023-03-12T00:00:00", account=2, action="Buy", ticker="VOO", amount=1800.4, shares=5),
+            schema.Transaction(id=9, date="2023-04-01T00:00:00", account=1, action="Sell", ticker="QQQ", amount=7478, shares=25),
+            schema.Transaction(id=10, date="2023-06-01T00:00:00", account=3, action="Buy", ticker="MSFT", amount=3400, shares=10),
+            schema.Transaction(id=11, date="2023-06-02T00:00:00", account=3, action="Sell", ticker="MSFT", amount=3450, shares=10)
         ]
         return pd.DataFrame([t.dict() for t in transactions])
 
@@ -59,14 +58,15 @@ class TestPortfolio:
         """Test Portfolio.get_holdings() with valid transaction DataFrame"""
         expected = pd.DataFrame(
             [
-                {"account": 1, "ticker": "QQQ", "total_shares": 10, "book_value": 2860.31, "avg_cost": 286.03},
-                {"account": 1, "ticker": "VOO", "total_shares": 20, "book_value": 6992.40, "avg_cost": 349.62},
-                {"account": 1, "ticker": "TSLA", "total_shares": 5, "book_value": 1020.40, "avg_cost": 204.08},
-                {"account": 2, "ticker": "VOO", "total_shares": 57, "book_value": 20057.08, "avg_cost": 351.88},
+                {"account": 1, "ticker": "QQQ", "total_shares": 10, "book_value": 2860.31, "avg_cost": 286.03, "realized_gain": 327.21},
+                {"account": 1, "ticker": "VOO", "total_shares": 20, "book_value": 6992.40, "avg_cost": 349.62, "realized_gain": 0},
+                {"account": 1, "ticker": "TSLA", "total_shares": 5, "book_value": 1020.40, "avg_cost": 204.08, "realized_gain": 0},
+                {"account": 2, "ticker": "VOO", "total_shares": 57, "book_value": 20057.08, "avg_cost": 351.88, "realized_gain": 0},
+                {"account": 3, "ticker": "MSFT", "total_shares": 0, "book_value": 0, "avg_cost": 340, "realized_gain": 50}
             ]
         ).set_index(["account", "ticker"])
         holdings = portfolio.get_holdings()
-        assert np.all(holdings - expected == 0)
+        assert utils.is_close(holdings, expected)
 
     @pytest.mark.parametrize("account,expected", [
         (None, pd.Series([0.108695, 0.836957, 0.054348], index=["QQQ", "VOO", "TSLA"])),
@@ -76,4 +76,5 @@ class TestPortfolio:
     def test_portfolio_get_weights(self, portfolio, account, expected):
         """Test Portfolio.get_weights() with valid transaction DataFrame"""
         weights = portfolio.get_weights(account)
+        print(weights)
         assert utils.is_close(weights, expected)

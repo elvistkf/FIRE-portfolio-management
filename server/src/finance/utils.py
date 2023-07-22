@@ -1,3 +1,4 @@
+from typing import Any, Type
 import numpy as np
 import pandas as pd
 
@@ -74,9 +75,21 @@ def normalize(s: pd.Series | np.ndarray) -> pd.Series:
     return s / s.sum()
 
 
-def is_close(d1: pd.DataFrame | pd.Series, d2: pd.DataFrame | pd.Series, threshold: float = 1e-5) -> bool:
+def is_list_of_type(var: Any, dtype: Type) -> bool:
+    return isinstance(var, list) and np.all([isinstance(item, dtype) for item in var])
+
+
+def is_tuple_of_type(var: Any, dtype: Type) -> bool:
+    return isinstance(var, tuple) and np.all([isinstance(item, dtype) for item in var])
+
+
+def is_close(d1: pd.DataFrame | pd.Series | float, d2: pd.DataFrame | pd.Series | float, threshold: float = 1e-5) -> bool:
     if isinstance(d1, pd.DataFrame) and isinstance(d2, pd.DataFrame) or isinstance(d1, pd.Series) and isinstance(d2, pd.Series):
         d1 = d1.sort_index()
         d2 = d2.sort_index()
         return np.all((np.abs(d1 - d2) <= threshold) | (pd.isna(d1) & pd.isna(d2)))
+    elif is_list_of_type(d1, float) and is_list_of_type(d1, float):
+        d1 = np.array(d1)
+        d2 = np.array(d2)
+        return np.all(np.abs(d1 - d2) <= threshold)
     return np.all(np.abs(d1 - d2) <= threshold)

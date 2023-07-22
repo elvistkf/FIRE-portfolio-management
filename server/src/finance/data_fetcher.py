@@ -8,6 +8,10 @@ import threading
 import time
 import logging
 
+if __name__ == "__main__":
+    from utils import is_list_of_type, is_tuple_of_type
+else:
+    from .utils import is_list_of_type, is_tuple_of_type
 
 def data_cache(maxsize: int = 128, expiration_seconds: int | float = 3600) -> Callable:
     """A custom cache decorator that caches the results of function evaluations for a specified duration and with a maximum cache size.
@@ -79,8 +83,7 @@ def get_tickers(tickers: Tuple[str] | List[str] | str, start: datetime | str = "
     Returns:
         _type_: Tickers data for the requested data range and period.
     """
-    if not (isinstance(tickers, str) or
-            (isinstance(tickers, list) or isinstance(tickers, tuple)) and np.all([isinstance(ticker, str) for ticker in tickers])):
+    if not (isinstance(tickers, str) or is_tuple_of_type(tickers, str) or is_list_of_type(tickers, str)):
         raise TypeError(f"Expected tickers to be List[str], Tuple[str] or str, instead found {type(tickers)}.")
     else:
         return yf.download(tickers=tickers, start=start, period="1d").Close
