@@ -30,8 +30,12 @@ class TestPortfolio:
     def portfolio(self, transactions_df):
         return p.Portfolio(details=transactions_df)
 
-    def test_portfolio_init(self, transactions_df):
-        """Test Portfolio initialization with valid transaction DataFrame"""
+    def test_portfolio_init(self, transactions_df: pd.DataFrame):
+        """Test Portfolio initialization with a valid DataFrame containing transaction details.
+
+        Args:
+            transactions_df (pd.DataFrame): A DataFrame representing transaction details.
+        """
         _ = p.Portfolio(transactions_df)
         assert True
 
@@ -54,8 +58,13 @@ class TestPortfolio:
             df = pd.DataFrame(data=[[0, 1, 2, 3, 4, 5]], columns=["id", "Shares", "price", "datetime", "account_no", "stock"])
             _ = p.Portfolio(details=df)
 
-    def test_portfolio_get_holdings(self, portfolio):
-        """Test Portfolio.get_holdings() with valid transaction DataFrame"""
+    def test_portfolio_get_holdings(self, portfolio: p.Portfolio):
+        """
+        Test the `get_holdings` method of the Portfolio class with a valid transaction DataFrame.
+
+        Args:
+        portfolio (p.Portfolio): An instance of the Portfolio class containing valid transaction data.
+        """
         expected = pd.DataFrame(
             [
                 {"account": 1, "ticker": "QQQ", "total_shares": 10, "book_value": 2860.31, "avg_cost": 286.03, "realized_gain": 327.21},
@@ -72,8 +81,15 @@ class TestPortfolio:
         (1, pd.Series([0.285714, 0.142857, 0.571429], index=["QQQ", "TSLA", "VOO"])),
         (2, pd.Series([1], index=["VOO"]))
     ])
-    def test_portfolio_get_weights(self, portfolio, account, expected):
-        """Test Portfolio.get_weights() with valid transaction DataFrame"""
+    def test_portfolio_get_weights(self, portfolio: p.Portfolio, account: int, expected: pd.DataFrame):
+        """Test the `get_weights` method of the Portfolio class
+
+        Args:
+            portfolio (p.Portfolio): An instance of the Portfolio class to be tested.
+            account (int): The account ID for which to retrieve the weights.
+            expected (pd.DataFrame): The expected weights as a pandas DataFrame. 
+        """
+
         weights = portfolio.get_weights(account)
         print(weights)
         assert utils.is_close(weights, expected)

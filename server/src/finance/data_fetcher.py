@@ -8,7 +8,12 @@ from .decorators import data_cache
 
 
 @data_cache(maxsize=512, expiration_seconds=7200)
-def get_tickers(tickers: Tuple[str] | List[str] | str, start: datetime | str = "2018-01-01", period: str = "1d") -> pd.DataFrame:
+def get_tickers(
+    tickers: Tuple[str] | List[str] | str, 
+    start: datetime | str = "2018-01-01", 
+    end: datetime | str | None = None,
+    period: str = "1d"
+) -> pd.DataFrame:
     """Retrieve the tickers data
 
     Args:
@@ -25,4 +30,4 @@ def get_tickers(tickers: Tuple[str] | List[str] | str, start: datetime | str = "
     if not (isinstance(tickers, str) or is_tuple_of_type(tickers, str) or is_list_of_type(tickers, str)):
         raise TypeError(f"Expected tickers to be List[str], Tuple[str] or str, instead found {type(tickers)}.")
     else:
-        return yf.download(tickers=tickers, start=start, period="1d").Close
+        return yf.download(tickers=tickers, start=start, end=end, period=period).Close

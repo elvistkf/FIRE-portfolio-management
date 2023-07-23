@@ -9,9 +9,22 @@ import time
 
 
 def capture_logs(func: Callable[..., Any]) -> Callable[..., Tuple[Any, str]]:
+    """A decorator that captures the logging information printed to standard output (stdout)
+    by the decorated function and returns it along with the function's result.
+
+    Args:
+        func (Callable[..., Any]): The function to be decorated. It can take any number of arguments of any type 
+            and return a value of any type.
+
+    Returns:
+        Callable[..., Tuple[Any, str]]: A wrapper function that captures the logging information printed during the execution 
+            of the original function and returns a tuple containing the function's result and the captured logging information.
+
+    """
     def wrapper(*args: Any, **kwargs: Any) -> Tuple[Any, str]:
         captured_stdout = sys.stdout
         sys.stdout = captured_buffer = StringIO()
+
         try:
             result = func(*args, **kwargs)
         finally:
@@ -23,7 +36,7 @@ def capture_logs(func: Callable[..., Any]) -> Callable[..., Tuple[Any, str]]:
     return wrapper
 
 
-def data_cache(maxsize: int = 128, expiration_seconds: int | float = 3600) -> Callable:
+def data_cache(maxsize: int = 128, expiration_seconds: int | float = 3600) -> Callable[..., Callable[..., Any]]:
     """A custom cache decorator that caches the results of function evaluations for a specified duration and with a maximum cache size.
 
     Args:
@@ -31,7 +44,7 @@ def data_cache(maxsize: int = 128, expiration_seconds: int | float = 3600) -> Ca
             If the number of cached entries exceeds this value, the least recently used (LRU) entry will be evicted. Default is 128.
         expiration_seconds (int | float, optional): The duration in seconds for which the cached results should be considered valid. 
             After this duration has passed, the cached results will be re-evaluated on the next function call. 
-            Default is 3600 seconds (1 hour).
+            Default is 3600 seconds.
 
     Returns:
         Callable: The cache decorator that can be applied to functions to cache their results.
@@ -39,9 +52,9 @@ def data_cache(maxsize: int = 128, expiration_seconds: int | float = 3600) -> Ca
     cache = OrderedDict()
     lock = threading.Lock()
 
-    def decorator(func: Callable) -> Callable:
+    def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
         @functools.wraps(func)
-        def wrapper(*args, **kwargs):
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
             normalized_args = tuple(*args) if is_tuple_of_type(args, list) or is_tuple_of_type(args, tuple) else args
             normalized_kwargs = frozenset(kwargs.items())
             key = (normalized_args, normalized_kwargs)

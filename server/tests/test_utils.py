@@ -4,43 +4,53 @@ import numpy as np
 import finance.utils as utils
 
 
-@pytest.fixture
-def s_ndarray():
-    return np.array([1, 1, 2, 2, 4])
-
-
-@pytest.fixture
-def s_series(s_ndarray):
-    return pd.Series(s_ndarray)
-
-
+@pytest.mark.parametrize("X", [
+    np.array([[0.3, 0.15, -0.06]]).T @ np.array([[0.3, 0.15, -0.06]]),
+    np.array([[0.6, 0, -2, 1, -0.3, 0.5]]).T @ np.array([[0.6, 0, -2, 1, -0.3, 0.5]])
+])
 class TestIsPSD:
-    @pytest.fixture
-    def X_ndarray(self):
-        A = np.random.rand(10, 1)
-        X = A @ A.T
-        return X
+    def test_ndarray(self, X: np.ndarray) -> None:
+        """
+        Test if the `is_psd` function correctly identifies a positive semi-definite (PSD) matrix.
 
-    @pytest.fixture
-    def X_df(self, X_ndarray):
-        return pd.DataFrame(X_ndarray)
+        Args:
+            X (np.ndarray): An input 2D NumPy array representing the matrix to be tested.
+        """
+        assert utils.is_psd(X)
 
-    def test_ndarray(self, X_ndarray):
-        assert utils.is_psd(X_ndarray)
+    def test_is_psd_dataframe(self, X: np.ndarray) -> None:
+        """
+        Test if the `is_psd` function correctly identifies a positive semi-definite (PSD) DataFrame.
 
-    def test_is_psd_dataframe(self, X_df):
+        Args:
+            X (np.ndarray): An input 2D NumPy array representing the data to construct the DataFrame.
+        """
+        X_df = pd.DataFrame(X)
         assert utils.is_psd(X_df)
 
-    def test_is_psd_negative(self, X_ndarray):
-        X = X_ndarray + np.random.rand(10, 10) * 0.01 - np.eye(10)
-        assert not utils.is_psd(X)
+    def test_is_psd_negative(self, X: np.ndarray) -> None:
+        """
+        Test if the `is_psd` function correctly identifies a non-positive semi-definite matrix.
 
-    def test_is_psd_invalid_type(self):
+        Args:
+            X (np.ndarray): An input 2D NumPy array representing the matrix used to construct the non-PSD matrix.
+        """
+        n = X.shape[0]
+        X_neg = X + np.random.rand(n, n) * 0.01 - np.eye(n)
+        assert not utils.is_psd(X_neg)
+
+    def test_is_psd_invalid_type(self, X: np.ndarray) -> None:
+        """
+        Test if the `is_psd` function raises a TypeError for an invalid input type.
+
+        Args:
+            X (np.ndarray):  Unused parameter from pytest parametrization.
+        """
         with pytest.raises(TypeError):
             _ = utils.is_psd([[1, 2, 3], [2, 1, 3], [3, 2, 1]])
 
 
-@pytest.mark.parametrize("arr,expected", [
+@pytest.mark.parametrize("arr, expected", [
     (np.array([1, 1, 2, 2, 4]), np.array([0.1, 0.1, 0.2, 0.2, 0.4])),
     (np.array([0.6, 0.3, 0.2, 0.9, 2]), np.array([0.15, 0.075, 0.05, 0.225, 0.5]))
 ])
@@ -62,9 +72,28 @@ class TestNormalize:
             _ = utils.normalize(-arr)
 
 
+@pytest.mark.parametrize(
+    "var, dtype, expected_result",
+    [
+        ([1, 2, 3], int, True),                 # All elements are integers
+        (["apple", "banana"], str, True),       # All elements are strings
+        ([1, 2, "hello"], int, False),          # Not all elements are integers
+        (["apple", "banana"], int, False),      # Not all elements are integers
+        ([], int, True),                        # Empty list should return True
+        ([1.5, 2.7, 3.0], float, True),         # All elements are floats
+        ([1, 2, 3], float, False),              # Not all elements are floats
+        (["apple", "banana"], float, False),    # Not all elements are floats
+        ("not_a_list", int, False),             # Not a list, should return False
+    ],
+)
 class TestIsListOfType:
-    pass
+    def test_is_list_of_type(self, var, dtype, expected_result):
+        assert utils.is_list_of_type(var=var, dtype=dtype) == expected_result
 
 
 class TestIsTupleOfType:
+    pass
+
+
+class TestIsClose:
     pass

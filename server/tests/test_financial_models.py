@@ -19,33 +19,59 @@ from exceptions import MismatchedIndexException
 ])
 class TestExpectedReturn:
     def test_expected_return(self, w: pd.Series, er: pd.Series, expected: float):
-        """Test expected_return with valid w and er.
+        """Test the `expected_return` function with valid inputs.
+
+        Args:
+            w (pd.Series): A Series representing the weight vector for the assets.
+            er (pd.Series): A Series representing the expected returns of the assets.
+            expected (float): The expected value of the portfolio's expected return.
         """
         assert utils.is_close(models.expected_return(w=w, er=er), expected)
 
     def test_expected_return_with_different_index_order(self, w: pd.Series, er: pd.Series, expected: float):
-        """Test expected_return with valid w and er but with different index order.
+        """Test the `expected_return` function with valid weight (w) and expected return (er) inputs,
+        but with different index order.
+
+        Args:
+            w (pd.Series): A Series representing the weight vector for the assets.
+            er (pd.Series): A Series representing the expected returns of the assets.
+            expected (float): The expected value of the portfolio's expected return.
         """
         w = w.sort_index(ascending=False)
         er = er.sort_index(ascending=True)
         assert utils.is_close(models.expected_return(w=w, er=er), expected)
 
     def test_expected_return_with_invalid_weights_type(self, w: pd.Series, er: pd.Series, expected: float):
-        """Test expected_return with invalid data type for w. This should raise a TypeError.
+        """Test the `expected_return` function with invalid data type for weight (w). This should raise a TypeError.
+
+        Args:
+            w (pd.Series): A Series representing the weight vector for the assets.
+            er (pd.Series): A Series representing the expected returns of the assets.
+            expected (float): Unused parameters from pytest parametrization
         """
         with pytest.raises(TypeError):
             w = list(w)
             _ = models.expected_return(w , er)
 
     def test_expected_return_with_invalid_returns_type(self, w: pd.Series, er: pd.Series, expected: float):
-        """Test expected_return with invalid data type for er. This should raise a TypeError.
+        """Test `expected_return` with invalid data type for er. This should raise a TypeError.
+
+        Args:
+            w (pd.Series): A Series representing the weight vector for the assets.
+            er (pd.Series): A Series representing the expected returns of the assets.
+            expected (float): Unused parameters from pytest parametrization
         """
         with pytest.raises(TypeError):
             er = list(er)
             _ = models.expected_return(w=w, er=er)
 
     def test_expected_return_with_mismatching_index(self, w: pd.Series, er: pd.Series, expected: float):
-        """Test expected_return with data types for w and er, but with mismatching index. This should raise an AttributeError.
+        """Test `expected_return` with data types for w and er, but with mismatching index. This should raise an AttributeError.
+
+        Args:
+            w (pd.Series): A Series representing the weight vector for the assets.
+            er (pd.Series): A Series representing the expected returns of the assets.
+            expected (float): Unused parameters from pytest parametrization
         """
         weights = w.set_axis(["A"] * w.shape[0])
         er = er.set_axis(["1"] * er.shape[0])
@@ -67,7 +93,12 @@ class TestVolatility:
         )
     ])
     def test_volatility(self, w: pd.Series, cov: pd.Series, expected: float):
-        """Test volatility with valid w and cov
+        """Test the `volatility` function with valid input.
+
+        Args:
+            w (pd.Series): A Series representing the weight vector for the assets.
+            cov (pd.Series): A Series representing the covariance matrix of asset returns.
+            expected (float): The expected volatility value calculated by the 'volatility' function.
         """
         assert utils.is_close(models.volatility(w=w, cov=cov), expected)
 
