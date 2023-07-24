@@ -1,7 +1,6 @@
 import pandas as pd
 import numpy as np
 from datetime import datetime
-from typing import List
 from sqlmodel import Session, select
 from .utils import is_matching_index, normalize, interval_to_periods_per_year
 from .data_fetcher import get_tickers
