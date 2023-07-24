@@ -12,7 +12,7 @@ def is_matching_index(idx1: pd.Index, idx2: pd.Index, strict: bool = False) -> b
         strict (bool, optional): Whether or not the indices must be in the same order. Defaults to False.
 
     Returns:
-        bool: Whether or not the provided indices match each other.
+        bool: True if the input indices 'idx1' and 'idx2' have matching index, otherwise False.
 
     Examples:
         >>> idx1 = pd.Index([1, 2, 3, 4, 5])
@@ -40,7 +40,10 @@ def is_psd(X: pd.DataFrame | np.ndarray) -> bool:
         X (pd.DataFrame | np.ndarray): Matrix to be checked for positive semi-definiteness
 
     Returns:
-        bool: Whether the provided matrix is PSD or not.
+        bool: True if the input 'X' is PSD, otherwise False.
+
+    Raises:
+        TypeError: If the input 'X' is neither a DataFrame nor a ndarray.
 
     Examples:
         >>> matrix1 = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
@@ -83,6 +86,10 @@ def normalize(s: pd.Series | np.ndarray) -> pd.Series:
 
     Returns:
         pd.Series: Normalized array/Series
+
+    Raises:
+        TypeError: If the input 's' is neither a Series nor a ndarray.
+        ValueError: If the input 's' has any negative elements.
 
     Examples:
         >>> arr = np.array([10, 20, 30, 40])
@@ -150,9 +157,38 @@ def is_close(
     d2: pd.DataFrame | pd.Series | np.ndarray | List[float] | List[int] | float | int,
     threshold: float = 1e-5
 ) -> bool:
-    if isinstance(d1, pd.DataFrame) \
-        and isinstance(d2, pd.DataFrame) or isinstance(d1, pd.Series) \
-            and isinstance(d2, pd.Series):
+    """
+    Check if two data structures are element-wise close to each other within a specified threshold.
+
+    Args:
+        d1 (Union[pd.DataFrame, pd.Series, np.ndarray, List[float], List[int], float, int]): First data structure.
+        d2 (Union[pd.DataFrame, pd.Series, np.ndarray, List[float], List[int], float, int]): Second data structure to compare with.
+        threshold (float, optional): The maximum allowed difference between elements to consider them close. Defaults to 1e-5.
+
+    Returns:
+        bool: True if the data structures are element-wise close, False otherwise.
+
+    Examples:
+        >>> # Example 1: Comparing two pandas Series with default threshold
+        >>> series1 = pd.Series([1.0, 2.0, 3.0])
+        >>> series2 = pd.Series([1.00001, 2.00002, 3.00003])
+        >>> is_close(series1, series2)
+        True
+
+        >>> # Example 2: Comparing two NumPy arrays with a custom threshold
+        >>> array1 = np.array([0.1, 0.2, 0.3])
+        >>> array2 = np.array([0.15, 0.25, 0.35])
+        >>> is_close(array1, array2, threshold=0.06)
+        True
+
+        >>> # Example 3: Comparing two lists of integers
+        >>> list1 = [1, 2, 3]
+        >>> list2 = [1, 2, 4]
+        >>> is_close(list1, list2)
+        False
+    """
+    if isinstance(d1, pd.DataFrame) and isinstance(d2, pd.DataFrame) or \
+        isinstance(d1, pd.Series) and isinstance(d2, pd.Series):
         
         d1 = d1.sort_index()
         d2 = d2.sort_index()
@@ -162,3 +198,13 @@ def is_close(
         d2 = np.array(d2)
         return np.all(np.abs(d1 - d2) <= threshold)
     return np.all(np.abs(d1 - d2) <= threshold)
+
+
+def interval_to_periods_per_year(interval: str):
+    interval_dict = {
+        "1d": 252,
+        "1wk": 52,
+        "1mo": 12,
+        "3mo": 4
+    }
+    return interval_dict[interval]

@@ -10,7 +10,11 @@ def validate_weights(w: pd.Series) -> None:
     If any of the constraints are violated, an exception is raised.
 
     Args:
-        w (pd.Series): Weights w to be checked for validity.
+        w (pd.Series): Weights to be checked for validity.
+    
+    Raises:
+        TypeError: If the input weights is not a Series.
+        ValueError: If the sum of the weights is not equal to 1, or if any element in the weights is negative.
     """
     if not isinstance(w, pd.Series):
         raise TypeError(f"Expected weights w to be a Series, instead found {type(w)}.")
@@ -29,6 +33,11 @@ def expected_return(w: pd.Series, er: pd.Series) -> float:
 
     Returns:
         float: Expected return of the combined assets.
+
+    Raises:
+        TypeError: If either 'w' or 'er' is not a pandas Series.
+        MismatchedIndexException: If the indices of 'w' and 'er' do not match.
+
     """
     validate_weights(w)
     if not isinstance(er, pd.Series):
@@ -48,6 +57,12 @@ def volatility(w: pd.Series, cov: pd.DataFrame) -> float:
 
     Returns:
         float: Volatility of the combined assets
+
+    Raises:
+        TypeError: If either 'w' or 'cov' is not a Series or DataFrame.
+        ValueError: If the covariance matrix `cov` is not positive semi-definite.
+        MismatchedIndexException: If the indices of 'w' and 'cov' do not match, or if the covariance matrix has mismatched index and columns.
+
     """
     validate_weights(w)
     if not isinstance(cov, pd.DataFrame):
@@ -62,7 +77,7 @@ def volatility(w: pd.Series, cov: pd.DataFrame) -> float:
     return np.sqrt(w.T @ cov @ w)
 
 
-def sharpe_ratio(w: pd.Series, er: pd.Series, cov: pd.DataFrame, rf: int | float) -> float:
+def sharpe_ratio(w: pd.Series, er: pd.Series, cov: pd.DataFrame, rf: int | float = 0) -> float:
     """Calculate the Sharpe ratio of a combination of assets.
 
     Args:
@@ -73,17 +88,15 @@ def sharpe_ratio(w: pd.Series, er: pd.Series, cov: pd.DataFrame, rf: int | float
 
     Returns:
         float: Sharpe ratio of the combined assets.
+
+    Raises:
+        TypeError: If the riskfree rate 'rf' is neither a float nor an int
     """
     if not isinstance(rf, float) and not isinstance(rf, int):
         raise TypeError(f"Expected risk-free rate rf to be int or float, instead found {type(rf)}.")
 
     adjusted_return = expected_return(w, er) - rf
     return adjusted_return / volatility(w, cov)
-
-
-def annualized_sharpe_ratio(r: pd.Series, rf: int | float, periods_per_year: int) -> float:
-    # TODO: complete the annualized Sharpe ratio calculation
-    return 0
 
 
 def information_ratio(w: pd.Series, er: pd.Series, cov: pd.DataFrame) -> float:
@@ -98,6 +111,101 @@ def information_ratio(w: pd.Series, er: pd.Series, cov: pd.DataFrame) -> float:
         float: Information ratio of the combined assets
     """
     return sharpe_ratio(w, er, cov, 0)
+
+
+def annualized_return(r: pd.Series | pd.DataFrame, periods_per_year: int) -> float:
+    """
+    Calculate the annualized return from historical returns.
+
+    Args:
+        r (pd.Series or pd.DataFrame): The historical returns of an asset or a portfolio. 
+        periods_per_year (int): The number of periods that occur in a year.
+
+    Returns:
+        float: The annualized return of the input data.
+
+    Raises:
+        TypeError: If the input `r` is neither a Series nor a DataFrame.
+
+    Examples:
+        >>> returns = pd.Series([0.05, 0.02, 0.03, -0.01, 0.04])
+        >>> annualized_return(returns, periods_per_year=12)
+        0.35740220595206784
+
+        >>> portfolio_returns = pd.DataFrame({
+        ...     'Asset1': [0.04, 0.02, 0.03, 0.01, 0.05],
+        ...     'Asset2': [0.03, 0.01, 0.02, -0.01, 0.04]
+        ... })
+        >>> annualized_return(portfolio_returns, periods_per_year=12)
+        Asset1    0.424149
+        Asset2    0.236589
+        dtype: float64
+    """
+    if isinstance(r, pd.Series):
+        ar = (1+r).prod() ** (periods_per_year / r.shape[0]) - 1
+        return ar
+    elif isinstance(r, pd.DataFrame):
+        return r.aggregate(annualized_return, periods_per_year=periods_per_year)
+    else:
+        raise TypeError(f"Expected r to be a Series or DataFrame, instead found {type(r)}.")
+
+
+def annualized_volatility(r: pd.Series | pd.DataFrame, periods_per_year: int) -> float:
+    """
+    Calculate the annualized volatility from historical returns.
+
+    Args:
+        r (pd.Series or pd.DataFrame): The historical returns of an asset or a portfolio. 
+        periods_per_year (int): The number of periods that occur in a year.
+
+    Returns:
+        float: The annualized volatility of the input data.
+
+    Raises:
+        TypeError: If the input `r` is neither a Series nor a DataFrame.
+    """
+    if isinstance(r, pd.Series):
+        av = r.std() * (periods_per_year ** 0.5)
+        return av
+    elif isinstance(r, pd.DataFrame):
+        return r.aggregate(annualized_volatility, periods_per_year=periods_per_year)
+    else:
+        raise TypeError(f"Expected r to be a Series or DataFrame, instead found {type(r)}.")
+
+
+def annualized_sharpe_ratio(r: pd.Series | pd.DataFrame, periods_per_year: int, rf: int | float, w: pd.Series | None = None) -> float:
+    """
+    Calculate the annualized Sharpe ratio from historical returns..
+
+    The Sharpe ratio measures the risk-adjusted return of an investment or portfolio.
+    A higher Sharpe ratio indicates better risk-adjusted performance.
+
+    Args:
+        r (pd.Series or pd.DataFrame): The historical returns of an asset or a portfolio. 
+        periods_per_year (int): The number of periods that occur in a year.
+        rf (int or float): The risk-free rate of return (annualized).
+        w (pd.Series, optional): The weights of assets in the portfolio (applicable only if `r` is a DataFrame). 
+
+    Returns:
+        float: The annualized Sharpe ratio of the input data.
+
+    Raises:
+        TypeError: If the input `r` is neither a Series nor a DataFrame.
+    """
+    if isinstance(r, pd.Series):
+        r = r.dropna()
+        annual_return = annualized_return(r, periods_per_year)
+        annual_vol = annualized_volatility(r, periods_per_year)
+        return (annual_return - rf) / annual_vol
+    elif isinstance(r, pd.DataFrame):
+        if w is None:
+            return r.aggregate(annualized_sharpe_ratio, rf=rf, periods_per_year=periods_per_year)
+        else:
+            validate_weights(w)
+            r_agg = (w * r).sum(axis=1)
+            return annualized_sharpe_ratio(r_agg, periods_per_year=periods_per_year, rf=rf)
+    else:
+        raise TypeError(f"Expected r to be a Series or DataFrame, instead found {type(r)}.")
 
 
 def var_gaussian(w: pd.Series, er: pd.Series, cov: pd.DataFrame, alpha: float = 0.95) -> float:
@@ -118,6 +226,10 @@ def var_gaussian(w: pd.Series, er: pd.Series, cov: pd.DataFrame, alpha: float = 
 
     Returns:
         float: Value-at-Risk (VaR) of the combined assets
+
+    Raises:
+        TypeError: If the input `alpha` is not a float.
+        ValueError: If the input `alpha` is not in range (0, 1).
     """
     if not isinstance(alpha, float):
         raise TypeError(f"Expected confidence level alpha to be a float, instead found {type(alpha)}.")
@@ -144,6 +256,9 @@ def var_historic(r: pd.Series | pd.DataFrame, alpha: float = 0.95, w: pd.Series 
         float | pd.Series: The historical VaR for the asset(s).
         If only one asset's data is provided, or if weights are provided, the returned value is a float representing the overall historical VaR.
         If multiple assets are provided but not weights, then a Series is provided with the VaR for each asset.
+
+    Raises:
+        TypeError: If the input `r` is neither a Series nor a DataFrame.
     """
     if not isinstance(alpha, float):
         TypeError(f"Expected confidence level alpha to be a float, instead found {type(alpha)}.")
@@ -172,6 +287,9 @@ def cvar_historic(r: pd.DataFrame | pd.Series, alpha: float = 0.95, w: pd.Series
         float | pd.Series: The historical CVaR for the asset(s).
         If only one asset's data is provided, or if weights are provided, the returned value is a float representing the overall historical CVaR.
         If multiple assets are provided but not weights, a Series is provided with the CVaR for each asset.
+
+    Raises:
+        TypeError: If the input `r` is neither a Series nor a DataFrame.
     """
     if isinstance(r, pd.Series):
         return -r[r <= -var_historic(r, alpha=alpha)].mean()

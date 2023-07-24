@@ -8,9 +8,8 @@ from exceptions import MismatchedIndexException
 
 
 class TestPortfolio:
-
     @pytest.fixture
-    def transactions_df(self):
+    def transactions_df(self) -> pd.DataFrame:
         transactions = [
             schema.Transaction(id=1, date="2023-01-01T00:00:00", account=1, action="Deposit", amount=50000),
             schema.Transaction(id=2, date="2023-01-01T00:00:00", account=1, action="Buy", ticker="QQQ", amount=2600, shares=10),
@@ -27,7 +26,7 @@ class TestPortfolio:
         return pd.DataFrame([t.dict() for t in transactions])
 
     @pytest.fixture
-    def portfolio(self, transactions_df):
+    def portfolio(self, transactions_df: pd.DataFrame) -> p.Portfolio:
         return p.Portfolio(details=transactions_df)
 
     def test_portfolio_init(self, transactions_df: pd.DataFrame):
