@@ -27,8 +27,9 @@ def max_sharpe_ratio(er: pd.Series, cov: pd.DataFrame, rf: int | float = 0):
         2    0.550489
         dtype: float64
     """
+    def obj(w, er, cov, rf):
+        return -(w @ er - rf) / np.sqrt(w.T @ cov @ w)
     n = er.shape[0]
-    obj = lambda w, er, cov, rf: -(w @ er - rf) / np.sqrt(w.T @ cov @ w)
     init_guess = np.repeat(1/n, n)
     bounds = ((0.0, 1.0),) * n
     constraint_sum = {
@@ -60,7 +61,7 @@ def global_min_volatility(cov: pd.DataFrame) -> pd.Series:
 def risk_budget(cov: pd.DataFrame, b: pd.Series | np.ndarray) -> pd.Series:
     """
     Calculate the weights of the portfolio that minimizes the risk contribution
-    
+
     Args:
         cov (pd.DataFrame): Covariance matrix of the assets
         b (pd.Series | np.ndarray): Risk budget of each asset
@@ -68,7 +69,8 @@ def risk_budget(cov: pd.DataFrame, b: pd.Series | np.ndarray) -> pd.Series:
     Returns:
         pd.Series: Weights of the optimized portfolio
     """
-    obj = lambda x: 0.5 * x.T @ cov @ x - b @ np.log(x)
+    def obj(x): 
+        return 0.5 * x.T @ cov @ x - b @ np.log(x)
     x0 = np.ones(b.shape)
     constraint = {
         'type': 'ineq',
@@ -91,8 +93,9 @@ def min_volatility(er: pd.Series, cov: pd.DataFrame, target_return: int | float)
     Returns:
         pd.Series: Weights of the optimized portfolio
     """
+    def obj(x): 
+        return (x.T @ cov @ x) ** 0.5
     n = er.shape[0]
-    obj = lambda x: (x.T @ cov @ x) ** 0.5
     initial_weights = np.repeat(1/n, n)
     bounds = ((0.0, 1.0),) * n
     constraint_sum = {
@@ -104,13 +107,7 @@ def min_volatility(er: pd.Series, cov: pd.DataFrame, target_return: int | float)
         'fun': lambda x: x @ er - target_return
     }
 
-    result = minimize(obj,
-                      initial_weights,
-                      constraints=[constraint_sum, constraint_return],
-                      bounds=bounds,
-                      method="SLSQP",
-                      tol=1e-10
-                      )
+    result = minimize(obj, initial_weights, constraints=[constraint_sum, constraint_return], bounds=bounds, method="SLSQP", tol=1e-10)
 
     return pd.Series(result.x, index=cov.index)
 

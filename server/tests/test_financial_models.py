@@ -5,6 +5,7 @@ import finance.financial_models as models
 import finance.utils as utils
 from exceptions import MismatchedIndexException
 
+
 @pytest.mark.parametrize("w", [
         pd.Series([0.5, 0.5], index=["T1", "T2"]),
         pd.Series([0.25, 0.25, 0.1, 0.4], index=["T1", "T2", "T3", "T4"]),
@@ -107,19 +108,19 @@ class TestExpectedReturn:
             _ = models.expected_return(w=weights, er=er)
 
 
+@pytest.mark.parametrize("w, cov, expected", [
+    (
+        pd.Series([0.5, 0.5], index=["T1", "T2"]),
+        pd.DataFrame([[0.04, 0.03], [0.03, 0.09]], index=["T1", "T2"], columns=["T1", "T2"]),
+        0.217945
+    ),
+    (
+        pd.Series([0.7, 0.3], index=["T1", "T2"]),
+        pd.DataFrame([[0.04, -0.03], [-0.03, 0.09]], index=["T1", "T2"], columns=["T1", "T2"]),
+        0.122882
+    )
+])
 class TestVolatility:
-    @pytest.mark.parametrize("w, cov, expected", [
-        (
-            pd.Series([0.5, 0.5], index=["T1", "T2"]),
-            pd.DataFrame([[0.04, 0.03], [0.03, 0.09]], index=["T1", "T2"], columns=["T1", "T2"]),
-            0.217945
-        ),
-        (
-            pd.Series([0.7, 0.3], index=["T1", "T2"]),
-            pd.DataFrame([[0.04, -0.03], [-0.03, 0.09]], index=["T1", "T2"], columns=["T1", "T2"]),
-            0.122882
-        )
-    ])
     def test_volatility(self, w: pd.Series, cov: pd.Series, expected: float):
         """Test the `volatility` function with valid input.
 
