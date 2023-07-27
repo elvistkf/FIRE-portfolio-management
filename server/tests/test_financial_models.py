@@ -1,8 +1,36 @@
 import pytest
 import pandas as pd
+import numpy as np
 import finance.financial_models as models
 import finance.utils as utils
 from exceptions import MismatchedIndexException
+
+@pytest.mark.parametrize("w", [
+        pd.Series([0.5, 0.5], index=["T1", "T2"]),
+        pd.Series([0.25, 0.25, 0.1, 0.4], index=["T1", "T2", "T3", "T4"]),
+        np.array([0.1, 0.9]),
+        np.array([0.8, 0.05, 0.05, 0.1]),
+        np.array([1])
+    ])
+class TestValidateWeights:
+    def test_validate_weights_with_valid_weights(self, w: pd.Series | np.ndarray):
+        """Test the `validate_weights` function with valid weight vector. This should return True."""
+        models.validate_weights(w)
+        assert True
+
+    def test_validate_weights_with_invalid_sum(self, w):
+        """Test the `validate_weights` function with invalid weight vector. This should raise a ValueError."""
+        _w = w.copy()
+        _w[0] = _w[0] + 1.0
+        with pytest.raises(ValueError):
+            models.validate_weights(_w)
+
+    def test_valid_weights_with_negative_elements(self, w):
+        """Test the `validate_weights` function with negative weights. This should raise a ValueError."""
+        _w = w.copy()
+        _w[0] = -_w[0]
+        with pytest.raises(ValueError):
+            models.validate_weights(_w)
 
 
 @pytest.mark.parametrize("w, er, expected", [
@@ -103,12 +131,18 @@ class TestVolatility:
         assert utils.is_close(models.volatility(w=w, cov=cov), expected)
 
 
-class TestSharpeRatio:
-    pass
-
-
+@pytest.mark.parametrize("w, er, cov, alpha, expected", [
+    (
+        pd.Series([1.0, 0.0], index=["T1", "T2"]),
+        pd.Series([-0.1, 0.2], index=["T1", "T2"]),
+        pd.DataFrame([[0.04, 0.03], [0.03, 0.09]], index=["T1", "T2"], columns=["T1", "T2"]),   
+        0.5,
+        0.1
+    )
+])
 class TestVaRGaussian:
-    pass
+    def test_var_gaussian(self, w: pd.Series, er: pd.Series, cov: pd.Series, alpha: float, expected: float):
+        assert models.var_gaussian(w, er, cov, alpha) == expected
 
 
 class TestVaRHistoric:
