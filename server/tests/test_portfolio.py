@@ -72,7 +72,7 @@ class TestPortfolio:
                 {"account": 2, "ticker": "VOO", "total_shares": 57, "book_value": 20057.08, "avg_cost": 351.88, "realized_gain": 0}
             ]
         ).set_index(["account", "ticker"])
-        holdings = portfolio.get_holdings()
+        holdings = portfolio.get_holdings()[expected.columns]
         assert utils.is_close(holdings, expected)
 
     @pytest.mark.parametrize("account,expected", [

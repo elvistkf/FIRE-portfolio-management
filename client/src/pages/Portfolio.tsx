@@ -1,21 +1,12 @@
 // import React from 'react'
 import { useEffect, useState } from 'react';
-import AccountSummary from '../components/AccountSummary';
 import EfficientFrontier from '../components/EfficientFrontier';
 
-function Landing() {
-    const [accountSummary, setAccountSummary] = useState([])
+
+function Portfolio() {
     const [efficientFrontier, setEfficientFrontier] = useState([])
 
     const fetchData = () => {
-        fetch('http://localhost:49255/portfolio/summary')   // placeholder for development
-            .then(res => res.json())
-            .then(data => {
-                console.log(data)
-                setAccountSummary(data)
-            })
-            .catch(err => console.log(err));
-
         fetch('http://localhost:49255/portfolio/efficient_frontier')   // placeholder for development
             .then(res => res.json())
             .then(data => {
@@ -28,10 +19,9 @@ function Landing() {
     useEffect(() => {
         fetchData()
     }, [])
-
     return (
-        <AccountSummary accountSummary={accountSummary} />
+        <EfficientFrontier data={efficientFrontier} />
     )
 }
 
-export default Landing
+export default Portfolio

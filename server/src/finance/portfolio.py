@@ -1,14 +1,16 @@
 import pandas as pd
 import numpy as np
+from typing import List
 from datetime import datetime
 from sqlmodel import Session, select
 from .utils import is_matching_index, normalize, interval_to_periods_per_year
 from .data_fetcher import get_tickers
 from .financial_models import expected_return, volatility, sharpe_ratio, var_historic, cvar_historic, annualized_sharpe_ratio
+from .optimization import efficient_frontier
 
 from exceptions import MismatchedIndexException
 from database import engine
-from schema import Transaction
+from schema import Transaction, Account
 
 
 class Portfolio:
@@ -35,11 +37,11 @@ class Portfolio:
             self.holdings = pd.DataFrame(details, index=details.index, columns=["total_shares"])
             self.holdings.index.name = "ticker"
         elif details is None:
-            self.transactions = self.retrieve_transactions().astype({"amount": "float64", "shares": "float64"})
+            self.retrieve_transactions()
         else:
             raise TypeError(f"Expected input details to be a DataFrame or a Series, instead found {type(details)}.")
 
-    def retrieve_transactions(self) -> pd.DataFrame:
+    def retrieve_transactions(self):
         """
         Retrieve transaction history from the database
 
@@ -47,9 +49,15 @@ class Portfolio:
             pd.DataFrame: Transaction history from the database in pandas DataFrame
         """
         with Session(engine) as session:
-            statement = select(Transaction)
-            results = session.exec(statement).all()
-        return pd.DataFrame([t.dict() for t in results])
+            trans_statement = select(Transaction)
+            trans_results = session.exec(trans_statement).all()
+            acct_statement = select(Account)
+            acct_results = session.exec(acct_statement).all()
+        self.transactions = pd.DataFrame([t.dict() for t in trans_results]).astype({"amount": "float64", "shares": "float64"})
+        self.accounts = pd.DataFrame([a.dict() for a in acct_results])
+
+    def get_accounts(self) -> pd.DataFrame:
+        return self.accounts
 
     def get_holdings(self) -> pd.DataFrame:
         """
@@ -80,9 +88,9 @@ class Portfolio:
             holdings["realized_gain"] = (holdings["total_proceeds"] - holdings["total_shares_sold"] * holdings["avg_cost"])
 
             rounding_columns = ["avg_cost", "book_value", "realized_gain"]
-            holdings[rounding_columns] = holdings[rounding_columns].applymap(lambda x: round(x, 2))
+            holdings[rounding_columns] = holdings[rounding_columns].round(2)
 
-            self.holdings = holdings[["total_shares", "book_value", "avg_cost", "realized_gain"]] \
+            self.holdings = holdings[["total_shares", "book_value", "avg_cost", "realized_gain", "total_cost"]] \
                 .loc[holdings["total_shares"] > 0] \
                 .dropna()
         finally:
@@ -114,6 +122,9 @@ class Portfolio:
         else:
             raise TypeError(f"Expected account number to be an integer or None, instead found {type(account)}.")
 
+    def get_ticker_list(self) -> List[str]:
+        return self.get_holdings().reset_index()["ticker"].drop_duplicates().to_list()
+
     def get_tickers_metrics(
             self, 
             start: (datetime | str) = "2018-01-01",
@@ -141,7 +152,7 @@ class Portfolio:
         Returns:
             pd.DataFrame: A DataFrame containing metrics for the tickers held in the portfolio.
         """
-        ticker_list = self.get_holdings().reset_index()["ticker"].drop_duplicates().to_list()
+        ticker_list = self.get_ticker_list()
         tickers = get_tickers(ticker_list, start=start, end=end, period=period, interval=interval)
         returns: pd.DataFrame = tickers.pct_change()
         
@@ -181,7 +192,7 @@ class Portfolio:
         Returns:
             pd.Series: A Series containing overall metrics for the portfolio.
         """
-        ticker_list = self.get_holdings().reset_index()["ticker"].drop_duplicates().to_list()
+        ticker_list = self.get_ticker_list()
         tickers = get_tickers(ticker_list, start=start, end=end, period=period, interval=interval)
         returns: pd.DataFrame = tickers.pct_change()
 
@@ -198,3 +209,42 @@ class Portfolio:
         })
 
         return metrics
+    
+    def get_account_summary(self) -> pd.DataFrame:
+        holdings = self.get_holdings().copy()
+        transactions = self.transactions.copy()[["account", "action", "amount"]]
+        ticker_list = holdings.reset_index()["ticker"].drop_duplicates().to_list()
+        tickers = get_tickers(ticker_list)
+        prices = tickers.iloc[-1]
+        prices.index.name = "ticker"
+        holdings["stock_market_value"] = holdings["total_shares"] * prices
+        holdings["unrealized_gain"] = holdings["stock_market_value"] - holdings["book_value"]
+        
+        holdings = holdings.reset_index().groupby("account").sum()
+        holdings["unrealized_gain_pct"] = 100 * holdings["unrealized_gain"] / holdings["book_value"]
+    
+        transactions["cash_flow"] = transactions["action"].map({"Deposit": 1, "Sell": 1, "Buy": -1, "Withdrawl": -1}) * transactions["amount"]
+        holdings["cash"] = transactions.groupby("account").sum()["cash_flow"]
+        holdings["total_market_value"] = holdings["cash"] + holdings["stock_market_value"]
+
+        # round the necessary columns after processing
+        rounding_columns = ["unrealized_gain_pct", "stock_market_value", "total_market_value", "unrealized_gain", "book_value"]
+        holdings[rounding_columns] = holdings[rounding_columns].round(2)
+
+        holdings = holdings.drop(["ticker", "total_shares", "avg_cost"], axis=1)
+        return holdings
+    
+    def get_efficient_frontier(self,
+            start: (datetime | str) = "2018-01-01",
+            end: (datetime | str | None) = None,
+            period: (str | None) = None,
+            interval: str = "1d"
+        ) -> pd.DataFrame:
+        ticker_list = self.get_ticker_list()
+        tickers = get_tickers(ticker_list, start=start, end=end, period=period, interval=interval)
+        returns: pd.DataFrame = tickers.pct_change()
+
+        er = returns.mean()
+        cov = returns.dropna().cov()
+
+        return efficient_frontier(er=er, cov=cov, n_points=100)

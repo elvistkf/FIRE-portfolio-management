@@ -1,57 +1,45 @@
-import React from 'react';
+// import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import styled from 'styled-components';
-import VerticalNavbar from './components/Navbar';
+import NavBar, { NavItem } from './components/Navbar';
 import Landing from './pages/Landing';
-import Optimization from './pages/Optimization';
+import Portfolio from './pages/Portfolio';
+import {AiOutlineLineChart, AiOutlineHome, AiOutlineGithub} from 'react-icons/ai';
 
-// Define the NavItem interface (you can define it here or in a separate file)
-interface NavItem {
-    title: string;
-    url: string;
-}
 
 const Container = styled.div`
     display: flex;
     margin: 0;
     height: 100vh;
+    width: 100%;
 `;
 
 const MainContent = styled.div`
-    flex: 1;
+    /* flex: 1; */
     padding: 20px;
+    width: 100%;
 `;
 
-const App: React.FC = () => {
+function App() {
     const navItems: NavItem[] = [
-        { title: 'Home', url: '/' },
-        { title: 'Optimization', url: '/optimization' },
-        { title: 'About', url: '/about' },
-        { title: 'Contact', url: '/contact' },
+        { title: 'Home', url: '/', icon: <AiOutlineHome /> },
+        { title: 'Portfolio', url: '/portfolio', icon: <AiOutlineLineChart /> },
+        { title: 'GitHub', url: 'https://github.com/elvistkf/FIRE-portfolio-management', icon: <AiOutlineGithub />}
     ];
 
     return (
         <Router>
             <Container>
-                {/* Use the VerticalNavbar component */}
-                <VerticalNavbar navItems={navItems} />
-
+                <NavBar navItems={navItems} />
                 <MainContent>
-                    {/* Define your routes and components */}
                     <Routes>
                         <Route path="/" element={<Landing />} />
-                        <Route path="/optimization" element={<Optimization />} />
-                        <Route path="/about" element={<AboutComponent />} />
-                        <Route path="/contact" element={<ContactComponent />} />
+                        <Route path="/portfolio" element={<Portfolio />} />
                     </Routes>
                 </MainContent>
             </Container>
         </Router>
     );
 };
-
-// Define your components for each route (replace HomeComponent, AboutComponent, and ContactComponent with your actual components)
-const AboutComponent: React.FC = () => <div>About Content</div>;
-const ContactComponent: React.FC = () => <div>Contact Content</div>;
 
 export default App;
