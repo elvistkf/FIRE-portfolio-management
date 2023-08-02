@@ -296,37 +296,22 @@ class Portfolio:
         historical price data for the assets in the portfolio.
 
         Args:
-            start (datetime or str, optional): The start date for the historical price data. If not provided,
-                the default is "2018-01-01".
-            end (datetime or str or None, optional): The end date for the historical price data. If not provided,
-                the default is the current date.
-            period (str or None, optional): The frequency of the data resampling. Options are 'D' (daily),
-                'W' (weekly), 'M' (monthly), 'Q' (quarterly), 'Y' (yearly), or None for raw data.
-            interval (str, optional): The interval for fetching historical price data.
-                Default is "1d" (daily data).
+            start (datetime | str, optional): Start of data range (inclusive) used for metric calculation. 
+                Defaults to "2018-01-01".
+            end (datetime | str | None, optional): End of data range (exclusive) used for metric calculation.
+                Passing None as the argument means the end date is the most recent available date. Defaults to None.
+            period (str | None, optional): Period of data range used for metric calculation.
+                If period is defined, then start and end are ignored. Defaults to None.
+                Valid periods: 1d, 5d, 1mo, 3mo, 6mo, 1y, 2y, 5y, 10y, ytd, max.
+            interval (str, optional): Interval of data used for metric calculation. Defaults to "1d".
+                Valid intervals: 1d, 1wk, 1mo, 3mo. 
 
         Returns:
             pd.DataFrame: A DataFrame representing the Efficient Frontier. The DataFrame has two columns:
             'Returns': The expected returns for the portfolios on the Efficient Frontier.
             'Volatility': The corresponding standard deviation (volatility) for each portfolio.
-
-        Example usage:
-        efficient_frontier_data = get_efficient_frontier(start="2022-01-01", interval="1w")
-        print(efficient_frontier_data)
-
-        Note:
-        - The function requires a 'get_ticker_list' method to obtain a list of tickers in the portfolio.
-        - It relies on a 'get_tickers' function to fetch historical price data for the assets.
-        - The 'efficient_frontier' function is used to calculate the Efficient Frontier using expected returns
-        (er) and covariance matrix (cov) of asset returns.
-        - Ensure you have access to the required data and functions before calling this method.
         """
-        # ticker_list = self.get_ticker_list()
-        # tickers = get_tickers(ticker_list, start=start, end=end, period=period, interval=interval)
-        # returns: pd.DataFrame = tickers.pct_change()
 
-        # er = returns.mean()
-        # cov = returns.dropna().cov()
         stat = self.get_basic_statistics(start, end, period, interval)
         er = stat["expected_return"]
         cov = stat["covariance"]
