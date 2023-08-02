@@ -53,8 +53,6 @@ const NavItemLinkTitle = styled.div`
 `;
 
 function NavBar({ navItems }: NavbarProps) {
-    console.log(navItems)
-
     return (
         <Container>
             <NavItemsList>

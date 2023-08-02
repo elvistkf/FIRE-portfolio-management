@@ -4,24 +4,46 @@ import EfficientFrontier from '../components/EfficientFrontier';
 
 
 function Portfolio() {
+    const [loading, setLoading] = useState(true)
     const [efficientFrontier, setEfficientFrontier] = useState([])
+    const [overallMetrics, setOverallMetrics] = useState([])
 
-    const fetchData = () => {
-        fetch('http://localhost:49255/portfolio/efficient_frontier')   // placeholder for development
-            .then(res => res.json())
-            .then(data => {
-                console.log(data)
-                setEfficientFrontier(data)
-            })
-            .catch(err => console.log(err))
+    const fetchEfficientFrontier = () => {
+        return fetch('http://localhost:49255/portfolio/efficient_frontier')     // placeholder for development
+                .then(res => res.json())
+                .catch(err => console.log(err))
+    }
+
+    const fetchOverallMetrics = () => {
+        return fetch('http://localhost:49255/portfolio/overall_metrics')        // placeholder for development
+                .then(res => res.json())
+                .catch(err => console.log(err))
     }
 
     useEffect(() => {
-        fetchData()
+        Promise.all([fetchEfficientFrontier(), fetchOverallMetrics()])
+            .then(([efficientFrontier, overallMetrics]) => {
+                setEfficientFrontier(efficientFrontier);
+                setOverallMetrics(overallMetrics);
+                setLoading(false);
+            })
     }, [])
-    return (
-        <EfficientFrontier data={efficientFrontier} />
-    )
+
+    if (!loading) {
+        var portfolio = {
+            "x": overallMetrics["volatility"],
+            "y": overallMetrics["expected_return"]
+        }
+        return (
+            <EfficientFrontier curve={efficientFrontier["curve"]} tickers={efficientFrontier["tickers"]} portfolio={portfolio} />
+        )
+    }
+    else {
+        return (
+            <div>Loading...</div>
+        )
+    }
+    
 }
 
 export default Portfolio
