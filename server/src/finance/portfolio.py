@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-from typing import List
+from typing import List, Dict
 from datetime import datetime
 from sqlmodel import Session, select
 from .utils import is_matching_index, normalize, interval_to_periods_per_year
@@ -57,6 +57,12 @@ class Portfolio:
         self.accounts = pd.DataFrame([a.dict() for a in acct_results])
 
     def get_accounts(self) -> pd.DataFrame:
+        """
+        Retrieve the details of accounts for the portfolio
+
+        Returns:
+            pd.DataFrame: Details of accounts for the portfolio in DataFrame, including name, description and account id
+        """
         return self.accounts
 
     def get_holdings(self) -> pd.DataFrame:
@@ -124,6 +130,27 @@ class Portfolio:
 
     def get_ticker_list(self) -> List[str]:
         return self.get_holdings().reset_index()["ticker"].drop_duplicates().to_list()
+    
+    def get_basic_statistics(
+            self, 
+            start: (datetime | str) = "2018-01-01",
+            end: (datetime | str | None) = None,
+            period: (str | None) = None,
+            interval: str = "1d"
+        ) -> Dict[str, pd.Series | pd.DataFrame]:
+        ticker_list = self.get_ticker_list()
+        tickers: pd.DataFrame = get_tickers(ticker_list, start=start, end=end, period=period, interval=interval)
+        returns = tickers.pct_change().dropna()
+
+        er = returns.mean()
+        cov = returns.cov()
+
+        return {
+            "returns": returns,
+            "expected_return": er,
+            "covariance": cov
+        }
+
 
     def get_tickers_metrics(
             self, 
@@ -153,8 +180,8 @@ class Portfolio:
             pd.DataFrame: A DataFrame containing metrics for the tickers held in the portfolio.
         """
         ticker_list = self.get_ticker_list()
-        tickers = get_tickers(ticker_list, start=start, end=end, period=period, interval=interval)
-        returns: pd.DataFrame = tickers.pct_change()
+        tickers: pd.DataFrame = get_tickers(ticker_list, start=start, end=end, period=period, interval=interval)
+        returns = tickers.pct_change().dropna()
         
         metrics = pd.DataFrame()
         metrics["expected_returns"] = returns.mean()
@@ -192,13 +219,16 @@ class Portfolio:
         Returns:
             pd.Series: A Series containing overall metrics for the portfolio.
         """
-        ticker_list = self.get_ticker_list()
-        tickers = get_tickers(ticker_list, start=start, end=end, period=period, interval=interval)
-        returns: pd.DataFrame = tickers.pct_change()
+        # ticker_list = self.get_ticker_list()
+        # tickers: pd.DataFrame = get_tickers(ticker_list, start=start, end=end, period=period, interval=interval)
+        # returns = tickers.pct_change().dropna()
 
         w = self.get_weights()
-        er = returns.mean()
-        cov = returns.dropna().cov()
+        stat = self.get_basic_statistics(start, end, period, interval)
+        returns = stat["returns"]
+        er = stat["expected_return"]
+        cov = stat["covariance"]
+        
         metrics = pd.Series({
             "expected_return": expected_return(w=w, er=er),
             "volatility": volatility(w=w, cov=cov),
@@ -211,6 +241,24 @@ class Portfolio:
         return metrics
     
     def get_account_summary(self) -> pd.DataFrame:
+        """
+        Calculate and return a summary of account holdings and performance.
+
+        This function retrieves account holdings and transactions data for the current instance,
+        then computes various metrics related to the holdings' market values, gains, and cash flow.
+        The resulting summary DataFrame includes the following columns:
+        
+        - 'account': The unique account identifier.
+        - 'book_value': The book value of all stocks in the account.
+        - 'stock_market_value': The total market value of all stocks in the account.
+        - 'total_market_value': The sum of cash and stock market value, representing the overall account value.
+        - 'unrealized_gain': The unrealized gain/loss (difference between market value and book value).
+        - 'unrealized_gain_pct': The percentage of unrealized gain/loss relative to the book value.
+        - 'cash': The remaining cash balance in the account.
+
+        Returns:
+            pd.DataFrame: A DataFrame containing the account summary with the mentioned columns.
+        """
         holdings = self.get_holdings().copy()
         transactions = self.transactions.copy()[["account", "action", "amount"]]
         ticker_list = holdings.reset_index()["ticker"].drop_duplicates().to_list()
@@ -240,11 +288,47 @@ class Portfolio:
             period: (str | None) = None,
             interval: str = "1d"
         ) -> pd.DataFrame:
-        ticker_list = self.get_ticker_list()
-        tickers = get_tickers(ticker_list, start=start, end=end, period=period, interval=interval)
-        returns: pd.DataFrame = tickers.pct_change()
+        """
+        Calculate and return the Efficient Frontier based on the stocks in the current portfolio.
 
-        er = returns.mean()
-        cov = returns.dropna().cov()
+        The Efficient Frontier represents a set of optimal portfolios that offer the highest expected return
+        for a given level of risk (standard deviation). This function calculates the Efficient Frontier using
+        historical price data for the assets in the portfolio.
+
+        Args:
+            start (datetime or str, optional): The start date for the historical price data. If not provided,
+                the default is "2018-01-01".
+            end (datetime or str or None, optional): The end date for the historical price data. If not provided,
+                the default is the current date.
+            period (str or None, optional): The frequency of the data resampling. Options are 'D' (daily),
+                'W' (weekly), 'M' (monthly), 'Q' (quarterly), 'Y' (yearly), or None for raw data.
+            interval (str, optional): The interval for fetching historical price data.
+                Default is "1d" (daily data).
+
+        Returns:
+            pd.DataFrame: A DataFrame representing the Efficient Frontier. The DataFrame has two columns:
+            'Returns': The expected returns for the portfolios on the Efficient Frontier.
+            'Volatility': The corresponding standard deviation (volatility) for each portfolio.
+
+        Example usage:
+        efficient_frontier_data = get_efficient_frontier(start="2022-01-01", interval="1w")
+        print(efficient_frontier_data)
+
+        Note:
+        - The function requires a 'get_ticker_list' method to obtain a list of tickers in the portfolio.
+        - It relies on a 'get_tickers' function to fetch historical price data for the assets.
+        - The 'efficient_frontier' function is used to calculate the Efficient Frontier using expected returns
+        (er) and covariance matrix (cov) of asset returns.
+        - Ensure you have access to the required data and functions before calling this method.
+        """
+        # ticker_list = self.get_ticker_list()
+        # tickers = get_tickers(ticker_list, start=start, end=end, period=period, interval=interval)
+        # returns: pd.DataFrame = tickers.pct_change()
+
+        # er = returns.mean()
+        # cov = returns.dropna().cov()
+        stat = self.get_basic_statistics(start, end, period, interval)
+        er = stat["expected_return"]
+        cov = stat["covariance"]
 
         return efficient_frontier(er=er, cov=cov, n_points=100)
